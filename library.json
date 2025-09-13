@@ -1,0 +1,11 @@
+{
+  "name": "GamepadSerialBridge:",
+  "version": "1.0.0",
+  "author": "Noah Ruimveld",
+  "maintainer": "Noah Ruimveld <nruimveld@gmail.com>",
+  "sentence": "Bridge gamepad/controller state over Serial/UART to Arduino via callbacks.",
+  "paragraph": "GamepadSerialBridge listens on a Serial/UART interface for structured controller state frames, parses them, and invokes user-defined callbacks when inputs change. It is transport-agnostic and works with any device that outputs the expected frame format (for example, an ESP32 running Bluepad).",
+  "category": "Communication",
+  "url": "https://github.com/nruin7/GamepadSerialBridge",
+  "architectures": [ "*" ]
+}
