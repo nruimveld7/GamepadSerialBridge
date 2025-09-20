@@ -1,9 +1,9 @@
 // src/Mappings/XboxMapping.h
 #pragma once
 
-#include "GamepadInputIDs.h"
+#include "Gamepad/InputIDs.h"
 
-namespace Gamepad {
+namespace GSB {
 namespace Xbox {
 
 // ---- D-Pad (bit order must match your DPadButtons.buttonIDs table) ----
@@ -66,4 +66,4 @@ namespace Joysticks {
 // }
 
 } // namespace Xbox
-} // namespace Gamepad
+} // namespace GSB

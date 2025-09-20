@@ -19,6 +19,3 @@ CMakeFiles/
 cmake-build-*/
 *.elf
 *.map
-
-# (Optional) If you vendor Bluepad32 locally, ignore its build stuff only:
-# external/bluepad32/build/

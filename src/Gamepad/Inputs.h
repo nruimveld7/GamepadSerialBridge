@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-namespace Gamepad {
+namespace GSB {
   class Button {
     public:
       Button();

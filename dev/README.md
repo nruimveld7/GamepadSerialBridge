@@ -57,7 +57,7 @@ ESP32 side using the **Bluepad32** board package:
 ## Tips
 - Exit serial monitor with **Ctrl+C**.
 - Some ESP32 boards re-enumerate after flashing. If the COM port number changes, re-run the sender script with the new port.
-- Keep includes as `<XBoxControllerHandler.h>` and `<Bluepad32.h>`; the scripts pass `--libraries .` so your **local** `src/` is used during compilation.
+- Keep includes as `<GamepadSerialBridge.h>` and `<Bluepad32.h>`; the scripts pass `--libraries .` so your **local** `src/` is used during compilation.
 
 ---
 
