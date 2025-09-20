@@ -2,11 +2,11 @@
 
 namespace GSB {
   namespace internal {
-    LinkBase::LinkBase(const LinkConfig& linkConfig)
+    LinkBase::LinkBase(const LinkConfig& linkConfig) noexcept
       : m_gamepadCount(linkConfig.gamepadCount),
         m_uartConfig(linkConfig.uartConfig),
-        m_logSerial(linkConfig.logSerial),
-        m_linkSerial(linkConfig.linkSerial) {
+        m_linkSerial(linkConfig.linkSerial),
+        m_logSerial(linkConfig.logSerial) {
       if (m_gamepadCount < 0) {
         m_gamepadCount = 0;
       }
@@ -18,79 +18,84 @@ namespace GSB {
       }
     }
 
-    LinkBase::~LinkBase() {
-
-    }
-
-    bool LinkBase::Setup() {
-      if(!m_linkSerial) {
-        return false;
-      }
+    bool LinkBase::Setup() noexcept {
       const int uartConfig = m_uartConfig.GetSerialConfig();
       if (uartConfig < 0) {
-        Log(F("Invalid serial config"));
+        Log(F("Invalid UART configuration"));
         return false;
       }
-      m_linkSerial->begin(m_uartConfig.GetBaudRate(), m_uartConfig.GetSerialConfig());
-      delay(2000);
-      Log(F("Base Initialize"));
+      m_linkSerial.begin(m_uartConfig.GetBaudRate(), uartConfig);
       return true;
     }
 
-    void LinkBase::Loop() {
+    void LinkBase::Loop() noexcept {
       ProcessSerial();
     }
 
-    void LinkBase::SetParseBinary(Function<const uint8_t*, size_t> parseBinary) {
-      if(parseBinary) {
-        m_parseBinary = parseBinary;
-      }
+    void LinkBase::SetParseBinary(Function<const uint8_t*, size_t> parseBinary) noexcept {
+      m_parseBinary = parseBinary;
     }
 
-    void LinkBase::SetParseASCII(Function<const char*, size_t> parseASCII) {
-      if(parseASCII) {
-        m_parseASCII = parseASCII;
-      }
+    void LinkBase::SetParseASCII(Function<const char*, size_t> parseASCII) noexcept {
+      m_parseASCII = parseASCII;
     }
 
     // ------------------- serial ingest -------------------
-    void LinkBase::ProcessSerial() {
-      if (m_linkSerial == nullptr) {
-        return;
-      }
+    void LinkBase::ProcessSerial() noexcept {
       static const char s_dataPrefix[] = "DATA|";
       static constexpr size_t s_dataPrefixLength = sizeof(s_dataPrefix) - 1;
-      while (m_linkSerial->available()) {
+      while (m_linkSerial.available()) {
         // ----- Binary auto-detect by identifier -----
-        int peekByte = m_linkSerial->peek();
+        int peekByte = m_linkSerial.peek();
         if (peekByte == s_binaryIdentifier) {
-          if (m_linkSerial->available() < static_cast<int>(s_binaryTotalLength)) {
+          // Require the full frame before consuming anything:
++         // header(2) + payload(len) + crc(2).
+          const size_t maxMessageLength = s_binaryHeaderLength + s_binaryMaxPayloadLength + s_binaryCRCLength;
+          if (m_linkSerial.available() < static_cast<int>(maxMessageLength)) {
             break;
           }
-          uint8_t packet[s_binaryTotalLength];
-          for (size_t i = 0; i < s_binaryTotalLength; ++i) {
-            packet[i] = static_cast<uint8_t>(m_linkSerial->read());
+
+          // Read the 2-byte header (id, len)
+          uint8_t header[s_binaryHeaderLength];
+          size_t headerBytes = m_linkSerial.readBytes(header, s_binaryHeaderLength);
+          if (headerBytes != s_binaryHeaderLength) {
+            break;
           }
-          if (packet[1] != s_binaryPayloadLength) {
-            Log(F("Invalid Binary Packet Length"));
-            continue;
-          }
-          const uint16_t crcRx = (uint16_t)packet[s_binaryTotalLength - 2] | ((uint16_t)packet[s_binaryTotalLength - 1] << 8);
-          const uint16_t crc = CRC16_CCITT(&packet[2], s_binaryPayloadLength);
-          if (crc != crcRx) {
-            Log(F("Invalid Binary Packet CRC"));
+          const uint8_t binaryIdentifier = header[0];
+          const uint8_t messageLength = header[1];
+          if(binaryIdentifier != s_binaryIdentifier || messageLength == 0 || messageLength > s_binaryMaxPayloadLength) {
+            Log(F("Corrupt binary payload: identifier/length error"));
             continue;
           }
 
-          // Provide only the 30-byte payload to the binary parser
-          if(m_parseBinary) {
-            m_parseBinary(&packet[2], s_binaryPayloadLength);
+          // Ensure payload + crc are available
+          const size_t remainingBytes = static_cast<size_t>(messageLength) + s_binaryCRCLength;
+          if (m_linkSerial.available() < static_cast<int>(remainingBytes)) {
+            break;
+          }
+
+          // Read payload + crc
+          uint8_t message[s_binaryMaxPayloadLength + s_binaryCRCLength];
+          size_t receivedBytes = m_linkSerial.readBytes(message, remainingBytes);
+          if (receivedBytes != remainingBytes) {
+            break;
+          }
+          const uint16_t receivedCRC = static_cast<uint16_t>(message[messageLength]) | (static_cast<uint16_t>(message[messageLength + 1]) << 8);
+          const uint16_t calculatedCRC = CRC16_CCITT(message, messageLength);
+          if (receivedCRC != calculatedCRC) {
+            Log(F("Corrupt binary payload: CRC error"));
+            continue;
+          }
+
+          // Process message
+          if (m_parseBinary) {
+            m_parseBinary(message, messageLength);
           }
           continue;
         }
 
         // ----- ASCII line assembly -----
-        const int incomingByte = m_linkSerial->read();
+        const int incomingByte = m_linkSerial.read();
         if (incomingByte < 0) {
           break;
         }
@@ -139,11 +144,9 @@ namespace GSB {
               } else {
                 Log(F("UNRECOGNIZED MESSAGE:"));
                 Log(lineStart);
-                // Hex dump (keeps your existing helper)
-                if (m_logSerial != nullptr) {
-                  PrintHex(m_logSerial, lineStart, lineLength);
-                  m_logSerial->println();
-                }
+                // Hex dump of raw line bytes
+                PrintHex(m_logSerial, reinterpret_cast<const uint8_t*>(lineStart), lineLength);
+                m_logSerial.println();
               }
             }
           }
@@ -166,7 +169,7 @@ namespace GSB {
       }
     }
 
-    inline uint16_t LinkBase::CRC16_CCITT(const uint8_t* data, size_t length) {
+    uint16_t LinkBase::CRC16_CCITT(const uint8_t* data, size_t length) noexcept {
       uint16_t crc = 0xFFFF;
       for (size_t i = 0; i < length; ++i) {
         crc ^= static_cast<uint16_t>(data[i]) << 8;
@@ -181,7 +184,7 @@ namespace GSB {
       return crc;
     }
 
-    inline bool LinkBase::StrToHexU16(const char* text, size_t length, uint16_t& outHex) {
+    bool LinkBase::StrToHexU16(const char* text, size_t length, uint16_t& outHex) noexcept {
       if (!text || length == 0) {
         return false;
       }
@@ -207,7 +210,7 @@ namespace GSB {
       return true;
     }
 
-    inline long LinkBase::StrToInt(const char* text, size_t length) {
+    long LinkBase::StrToInt(const char* text, size_t length) noexcept {
       if (text == nullptr || length == 0) {
         return 0;
       }
@@ -230,7 +233,7 @@ namespace GSB {
       return value;
     }
 
-    inline bool LinkBase::StrEquals(const char* a, const char* b) {
+    bool LinkBase::StrEquals(const char* a, const char* b) noexcept {
       while (*a && (*a == *b)) {
         ++a;
         ++b;
@@ -238,7 +241,7 @@ namespace GSB {
       return (*a == *b);
     }
 
-    inline bool LinkBase::StrStartsWith(const char* str, const char* prefix) {
+    bool LinkBase::StrStartsWith(const char* str, const char* prefix) noexcept {
       while (*prefix) {
         if (*str++ != *prefix++) {
           return false;
@@ -248,31 +251,34 @@ namespace GSB {
     }
 
 
-    inline void LinkBase::PrintHex(HardwareSerial* output, const char* buffer, size_t bufferLength) {
-      if (!output || !buffer) {
+    void LinkBase::PrintHex(Print& out, const uint8_t* data, size_t length, bool spaced) noexcept {
+      if (!data || !length) {
         return;
       }
-      const char hex[] = "0123456789ABCDEF";
-      for (size_t i = 0; i < bufferLength; ++i) {
-        if (i) {
-          output->print(' ');
+      // Precomputed ASCII for nybbles
+      static constexpr char HEX[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+      for (size_t i = 0; i < length; ++i) {
+        if (spaced && i) {
+          out.write(' ');
         }
-        uint8_t v = (uint8_t)buffer[i];
-        // Two nibbles -> hex chars
-        output->print(hex[v >> 4]);
-        output->print(hex[v & 0x0F]);
+        uint8_t byte = data[i];
+        char pair[2] = {
+          HEX[(byte >> 4) & 0x0F],
+          HEX[byte & 0x0F]
+        };
+        out.write(reinterpret_cast<const uint8_t*>(pair), 2);
       }
     }
 
-    inline uint8_t LinkBase::UInt8AtOffset(const uint8_t* data, size_t offset) {
+    uint8_t LinkBase::UInt8AtOffset(const uint8_t* data, size_t offset) noexcept {
       return data[offset];
     }
 
-    inline uint16_t LinkBase::UInt16AtOffset(const uint8_t* data, size_t offset) {
+    uint16_t LinkBase::UInt16AtOffset(const uint8_t* data, size_t offset) noexcept {
       return static_cast<uint16_t>(data[offset]) | (static_cast<uint16_t>(data[offset + 1]) << 8);
     }
 
-    inline int16_t LinkBase::Int16AtOffset(const uint8_t* data, size_t offset) {
+    int16_t LinkBase::Int16AtOffset(const uint8_t* data, size_t offset) noexcept {
       return static_cast<int16_t>(UInt16AtOffset(data, offset));
     }
   }

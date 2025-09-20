@@ -51,83 +51,86 @@ namespace GSB {
         ~LinkBase() = default;
         LinkBase(const LinkBase&) = delete;
         LinkBase& operator=(const LinkBase&) = delete;
-        bool Setup();
-        void Loop();
+        bool Setup() noexcept;
+        void Loop() noexcept;
 
       protected:
-        //Allow std::function style syntax without including the 'functional' library
+        //Lightweight delegate (no <functional>)
         template <typename... Args>
         struct Function {
           using Delegate = void(*)(void*, Args...);
           void* context{nullptr};
           Delegate delegate{nullptr};
-          inline void operator()(Args... args) const {
+          inline void operator()(Args... args) const noexcept {
             if (delegate) {
               delegate(context, args...);
             }
           }
-          explicit inline operator bool() const {
+          explicit inline operator bool() const noexcept {
             return delegate != nullptr;
           }
         };
 
-        //Allow derived classes to define how Binary/ASCII messages should be parsed
-        inline void SetParseBinary(Function<const uint8_t*, size_t> parseBinary);
-        inline void SetParseASCII(Function<const char*, size_t> parseASCII);
+        //Enable custom parsers
+        void SetParseBinary(Function<const uint8_t*, size_t> parseBinary) noexcept;
+        void SetParseASCII(Function<const char*, size_t> parseASCII) noexcept;
 
-        template <typename T>
-        inline void SetParseBinary(T* objectPtr, void (T::*memberPtr)(const uint8_t* data, size_t length)) {
+        //Enable custom class method parsers
+        template <typename T, void (T::*Method)(const uint8_t* data, size_t length)>
+        inline void SetParseBinary(T* objectPtr) noexcept {
           m_parseBinary = {
             objectPtr, +[](void* context, const uint8_t* dat, size_t len) {
-              (static_cast<T*>(context)->*memberPtr)(dat, len);
+              (static_cast<T*>(context)->*Method)(dat, len);
             }
           };
         }
 
-        template <typename T>
-        inline void SetParseASCII(T* objectPtr, void (T::*memberPtr)(const char* data, size_t length)) {
-          m_parseASCII = {
-            objectPtr, +[](void* context, const char* dat, size_t len) {
-              (static_cast<T*>(context)->*memberPtr)(dat, len);
+        template <typename T, void (T::*Method)(const char* data, size_t length)>
+        inline void SetParseASCII(T* objectPtr) noexcept {
+          m_parseBinary = {
+            m_parseASCII, +[](void* context, const char* dat, size_t len) {
+              (static_cast<T*>(context)->*Method)(dat, len);
             }
           };
+        }
+
+        template<typename T>
+        inline void Log(const T& value) {
+          m_logSerial.println(value);
+        }
+        inline void Log(const __FlashStringHelper* message) {
+          m_logSerial.println(message);
         }
 
       private:
-        void ProcessSerial();
-        static inline uint16_t CRC16_CCITT(const uint8_t* data, size_t length);
-        static inline bool StrToHexU16(const char* text, size_t length, uint16_t& outHex);
-        static inline long StrToInt(const char* text, size_t length);
-        static inline bool StrEquals(const char* a, const char* b);
-        static inline bool StrStartsWith(const char* str, const char* prefix);
-        static inline void PrintHex(HardwareSerial* output, const char* buffer, size_t bufferLength);
-        static inline uint8_t UInt8AtOffset(const uint8_t* data, size_t offset);
-        static inline uint16_t UInt16AtOffset(const uint8_t* data, size_t offset);
-        static inline int16_t Int16AtOffset(const uint8_t* data, size_t offset);
-        template<typename T>
-        inline void Log(const T& value) {
-          if (m_logSerial != nullptr) {
-            m_logSerial->print(value);
-            m_logSerial->println();
-          }
-        }
+        void ProcessSerial() noexcept;
+        static uint16_t CRC16_CCITT(const uint8_t* data, size_t length) noexcept;
+        static bool StrToHexU16(const char* text, size_t length, uint16_t& outHex) noexcept;
+        static long StrToInt(const char* text, size_t length) noexcept;
+        static bool StrEquals(const char* a, const char* b) noexcept;
+        static bool StrStartsWith(const char* str, const char* prefix) noexcept;
+        static void PrintHex(Print& out, const uint8_t* data, size_t length, bool spaced = true) noexcept;
+        static uint8_t UInt8AtOffset(const uint8_t* data, size_t offset) noexcept;
+        static uint16_t UInt16AtOffset(const uint8_t* data, size_t offset) noexcept;
+        static int16_t Int16AtOffset(const uint8_t* data, size_t offset) noexcept;
 
         Function<const uint8_t*, size_t> m_parseBinary{};
         Function<const char*, size_t> m_parseASCII{};
 
         static constexpr size_t s_bufferLength = 128;
         static constexpr uint8_t s_binaryIdentifier = 0xA5;
-        static constexpr uint8_t s_binaryPayloadLength = 30;
-        static constexpr size_t s_binaryTotalLength  = 1 + 1 + s_binaryPayloadLength + 2; //identifier + length + payload + crc
+        static constexpr size_t s_binaryHeaderLength = 2;
+        static constexpr size_t s_binaryCRCLength = 2;
+        static constexpr size_t s_binaryMaxPayloadLength = 64;
 
         int m_gamepadCount;
         Gamepad m_gamepads[MAXCONTROLLERS];
         UartConfig m_uartConfig;
-        Stream& m_linkSerial;
+        HardwareSerial& m_linkSerial;
         Print& m_logSerial;
         char m_lineBuffer[s_bufferLength]{};
-        size_t m_lineLength = 0;
-        bool m_isDroppingOverflow = false;
+        size_t m_lineLength{0};
+        bool m_isDroppingOverflow{false};
     };
-  }
-}
+  } //namespace internal
+} //namespace GSB
