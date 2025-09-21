@@ -97,4 +97,4 @@ namespace GSB {
       return -1; // invalid combo
     }
   };
-}
+} // namespace GSB

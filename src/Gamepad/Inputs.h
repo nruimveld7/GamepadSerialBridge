@@ -10,27 +10,27 @@ namespace GSB {
       bool GetPressed() const;
 
     private:
-      bool m_pressed = false;
+      bool m_pressed{false};
   };
 
   class Axis {
     public:
       Axis();
-      void SetTolerance(int tolerance);
-      bool SetValue(int value);
-      int GetValue() const;
+      void SetTolerance(uint16_t tolerance);
+      bool SetValue(int16_t value);
+      int16_t GetValue() const;
 
     private:
-      int m_value = 0;
-      int m_tolerance = 1;
+      uint16_t m_tolerance{1};
+      int16_t m_value{0};
   };
 
   class Trigger {
     public:
       Trigger();
-      void SetTolerance(int tolerance);
-      bool SetValue(int triggerVal);
-      int GetValue() const;
+      void SetTolerance(uint16_t tolerance);
+      bool SetValue(int16_t triggerVal);
+      int16_t GetValue() const;
       Axis& GetAxis();
       const Axis& GetAxis() const;
 
@@ -41,12 +41,12 @@ namespace GSB {
   class Joystick {
     public:
       Joystick();
-      void SetToleranceX(int tolerance);
-      void SetToleranceY(int tolerance);
-      bool SetValueX(int value);
-      bool SetValueY(int value);
-      int GetValueX() const;
-      int GetValueY() const;
+      void SetToleranceX(uint16_t tolerance);
+      void SetToleranceY(uint16_t tolerance);
+      bool SetValueX(int16_t value);
+      bool SetValueY(int16_t value);
+      int16_t GetValueX() const;
+      int16_t GetValueY() const;
       Axis& GetXAxis();
       const Axis& GetXAxis() const;
       Axis& GetYAxis();
@@ -57,18 +57,30 @@ namespace GSB {
       Axis m_yAxis;
   };
 
+  class Battery {
+    public:
+      Battery();
+      void SetTolerance(uint8_t tolerance);
+      bool SetValue(uint8_t value);
+      uint8_t GetValue() const;
+    
+    private:
+      uint8_t m_tolerance{1};
+      uint8_t m_value{0};
+  };
+
   class Sensor {
     public:
       Sensor();
-      void SetToleranceX(int tolerance);
-      void SetToleranceY(int tolerance);
-      void SetToleranceZ(int tolerance);
-      bool SetValueX(int valueX);
-      bool SetValueY(int valueY);
-      bool SetValueZ(int valueZ);
-      int GetValueX() const;
-      int GetValueY() const;
-      int GetValueZ() const;
+      void SetToleranceX(uint16_t tolerance);
+      void SetToleranceY(uint16_t tolerance);
+      void SetToleranceZ(uint16_t tolerance);
+      bool SetValueX(int16_t valueX);
+      bool SetValueY(int16_t valueY);
+      bool SetValueZ(int16_t valueZ);
+      int16_t GetValueX() const;
+      int16_t GetValueY() const;
+      int16_t GetValueZ() const;
       Axis& GetXAxis();
       const Axis& GetXAxis() const;
       Axis& GetYAxis();
@@ -81,4 +93,4 @@ namespace GSB {
       Axis m_yAxis;
       Axis m_zAxis;
   };
-}
+} // namespace GSB

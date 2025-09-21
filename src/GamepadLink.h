@@ -23,4 +23,4 @@ namespace GSB {
     private:
 
   };
-}
+} // namespace GSB

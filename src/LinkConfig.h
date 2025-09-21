@@ -22,12 +22,12 @@ namespace GSB {
       NullPrint(const NullPrint&) = delete;
       NullPrint& operator=(const NullPrint&) = delete;
     };
-  }
+  } // namespace internal
 
   struct LinkConfig {
-    int gamepadCount{1};
+    uint8_t gamepadCount{1};
     UartConfig uartConfig{};
     HardwareSerial& linkSerial;
     Print& logSerial = internal::NullPrint::GetInstance();
   };
-}
+} // namespace GSB

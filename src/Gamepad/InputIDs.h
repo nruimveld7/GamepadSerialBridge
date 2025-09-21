@@ -3,49 +3,54 @@
 
 namespace GSB {
     enum class ButtonID : uint8_t {
-    DPAD_1,
-    DPAD_2,
-    DPAD_3,
-    DPAD_4,
-    MAIN_1,
-    MAIN_2,
-    MAIN_3,
-    MAIN_4,
-    MAIN_5,
-    MAIN_6,
-    MAIN_7,
-    MAIN_8,
-    MAIN_9,
-    MAIN_10,
-    MAIN_11,
-    MAIN_12,
-    MAIN_13,
-    MAIN_14,
-    MAIN_15,
-    MAIN_16,
-    MISC_1,
-    MISC_2,
-    MISC_3,
-    MISC_4,
-    COUNT
+        DPAD_1,
+        DPAD_2,
+        DPAD_3,
+        DPAD_4,
+        MAIN_1,
+        MAIN_2,
+        MAIN_3,
+        MAIN_4,
+        MAIN_5,
+        MAIN_6,
+        MAIN_7,
+        MAIN_8,
+        MAIN_9,
+        MAIN_10,
+        MAIN_11,
+        MAIN_12,
+        MAIN_13,
+        MAIN_14,
+        MAIN_15,
+        MAIN_16,
+        MISC_1,
+        MISC_2,
+        MISC_3,
+        MISC_4,
+        COUNT
     };
 
     enum class TriggerID : uint8_t {
-    TRIGGER_1,
-    TRIGGER_2,
-    COUNT
+        TRIGGER_1,
+        TRIGGER_2,
+        COUNT
     };
 
     enum class JoystickID : uint8_t {
-    JOYSTICK_1,
-    JOYSTICK_2,
-    COUNT
+        JOYSTICK_1,
+        JOYSTICK_2,
+        COUNT
+    };
+
+    enum class BatteryID : uint8_t {
+        BATTERY_1,
+        COUNT
     };
 
     enum class SensorID : uint8_t {
-    SENSOR_1,
-    SENSOR_2,
-    COUNT
+        SENSOR_1,
+        SENSOR_2,
+        COUNT
     };
 
     // Small helpers for sizing/indices
@@ -83,6 +88,18 @@ namespace GSB {
 
     inline bool IsValid(JoystickID id) {
         return id < JoystickID::COUNT;
+    }
+
+    constexpr uint8_t BatteryCount() {
+        return static_cast<uint8_t>(BatteryID::COUNT);
+    }
+
+    constexpr uint8_t BatteryIndex(BatteryID id) {
+        return (static_cast<uint8_t>(id) < BatteryCount()) ? static_cast<uint8_t>(id) : BatteryCount();
+    }
+
+    inline bool IsValid(BatteryID id) {
+        return id < BatteryID::COUNT;
     }
 
     constexpr uint8_t SensorCount() {
@@ -147,4 +164,4 @@ namespace GSB {
             return sizeof(buttonIDs) / sizeof(buttonIDs[0]);
         }
     };
-}
+} // namespace GSB

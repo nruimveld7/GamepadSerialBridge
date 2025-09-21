@@ -5,4 +5,4 @@ namespace GSB {
   constexpr ButtonID DPadButtons::buttonIDs[];
   constexpr ButtonID MainButtons::buttonIDs[];
   constexpr ButtonID MiscButtons::buttonIDs[];
-}
+} // namespace GSB

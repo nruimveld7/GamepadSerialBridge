@@ -48,89 +48,68 @@ namespace GSB {
     class LinkBase {
       public:
         explicit LinkBase(const LinkConfig& linkConfig) noexcept;
-        ~LinkBase() = default;
+        virtual ~LinkBase() = default;
         LinkBase(const LinkBase&) = delete;
         LinkBase& operator=(const LinkBase&) = delete;
         bool Setup() noexcept;
         void Loop() noexcept;
 
       protected:
-        //Lightweight delegate (no <functional>)
-        template <typename... Args>
-        struct Function {
-          using Delegate = void(*)(void*, Args...);
-          void* context{nullptr};
-          Delegate delegate{nullptr};
-          inline void operator()(Args... args) const noexcept {
-            if (delegate) {
-              delegate(context, args...);
-            }
-          }
-          explicit inline operator bool() const noexcept {
-            return delegate != nullptr;
-          }
-        };
+        // Protected access helpers for subclasses
+        uint8_t GetGamepadCount() const noexcept;
+        Gamepad& GetGamepad(uint8_t index) noexcept;
+        const Gamepad& GetGamepad(uint8_t index) const noexcept;
+        HardwareSerial& GetLinkSerial() noexcept;
+        Print& GetLogSerial() noexcept;
 
-        //Enable custom parsers
-        void SetParseBinary(Function<const uint8_t*, size_t> parseBinary) noexcept;
-        void SetParseASCII(Function<const char*, size_t> parseASCII) noexcept;
-
-        //Enable custom class method parsers
-        template <typename T, void (T::*Method)(const uint8_t* data, size_t length)>
-        inline void SetParseBinary(T* objectPtr) noexcept {
-          m_parseBinary = {
-            objectPtr, +[](void* context, const uint8_t* dat, size_t len) {
-              (static_cast<T*>(context)->*Method)(dat, len);
-            }
-          };
-        }
-
-        template <typename T, void (T::*Method)(const char* data, size_t length)>
-        inline void SetParseASCII(T* objectPtr) noexcept {
-          m_parseBinary = {
-            m_parseASCII, +[](void* context, const char* dat, size_t len) {
-              (static_cast<T*>(context)->*Method)(dat, len);
-            }
-          };
-        }
-
+        // Derived classes override these to handle parsed frames.
+        // Default no-ops keep base usable without subclassing.
+        virtual void ParseSerial(const uint8_t* data, size_t length) noexcept {}
         template<typename T>
-        inline void Log(const T& value) {
+        inline void Log(const T& value) noexcept {
           m_logSerial.println(value);
         }
-        inline void Log(const __FlashStringHelper* message) {
+        inline void Log(const __FlashStringHelper* message) noexcept {
           m_logSerial.println(message);
         }
 
-      private:
-        void ProcessSerial() noexcept;
-        static uint16_t CRC16_CCITT(const uint8_t* data, size_t length) noexcept;
-        static bool StrToHexU16(const char* text, size_t length, uint16_t& outHex) noexcept;
-        static long StrToInt(const char* text, size_t length) noexcept;
-        static bool StrEquals(const char* a, const char* b) noexcept;
-        static bool StrStartsWith(const char* str, const char* prefix) noexcept;
-        static void PrintHex(Print& out, const uint8_t* data, size_t length, bool spaced = true) noexcept;
+        // Outbound helpers
+        // Derived classes pass raw payloads; we frame + CRC + COBS for you
+        bool SendSerial(const uint8_t* data, size_t length) noexcept;
+
+        // Parsing helpers usable by subclasses
         static uint8_t UInt8AtOffset(const uint8_t* data, size_t offset) noexcept;
         static uint16_t UInt16AtOffset(const uint8_t* data, size_t offset) noexcept;
         static int16_t Int16AtOffset(const uint8_t* data, size_t offset) noexcept;
 
-        Function<const uint8_t*, size_t> m_parseBinary{};
-        Function<const char*, size_t> m_parseASCII{};
+      private:
+        void ReadSerial() noexcept;
+        void WriteSerial(const uint8_t* data, size_t length) noexcept;
+        static uint16_t CRC16_CCITT(const uint8_t* data, size_t length) noexcept;
+        static size_t EncodeCOBS(const uint8_t* in, size_t len, uint8_t* out) noexcept;
+        static size_t DecodeCOBS(const uint8_t* in, size_t len, uint8_t* out) noexcept;
 
-        static constexpr size_t s_bufferLength = 128;
-        static constexpr uint8_t s_binaryIdentifier = 0xA5;
-        static constexpr size_t s_binaryHeaderLength = 2;
-        static constexpr size_t s_binaryCRCLength = 2;
+        // ============= Framing constants =============
+        // Packet before COBS: [ver(1)][type(1)][seq(1)][payload...][crc16(2)]
+        static constexpr uint8_t s_protoVersion = 1;
+        static constexpr size_t s_headerSize = 3;
+        static constexpr size_t s_crcSize = 2;
         static constexpr size_t s_binaryMaxPayloadLength = 64;
+        static constexpr size_t s_maxPacketSize = s_headerSize + s_binaryMaxPayloadLength + s_crcSize;
+        // COBS worst-case growth ~= n/254 + 1; add a couple bytes for safety
+        static constexpr size_t s_maxEncodedSize = s_maxPacketSize + (s_maxPacketSize/254) + 2;
 
-        int m_gamepadCount;
+        uint8_t m_gamepadCount;
         Gamepad m_gamepads[MAXCONTROLLERS];
         UartConfig m_uartConfig;
         HardwareSerial& m_linkSerial;
         Print& m_logSerial;
-        char m_lineBuffer[s_bufferLength]{};
-        size_t m_lineLength{0};
-        bool m_isDroppingOverflow{false};
+        
+        // RX accumulator for encoded bytes until 0x00 delimiter
+        uint8_t m_rxEncoded[s_maxEncodedSize]{};
+        size_t  m_rxLength{0};
+        // TX sequence (wrap is fine)
+        uint8_t m_txSequence{0};
     };
-  } //namespace internal
-} //namespace GSB
+  } // namespace internal
+} // namespace GSB

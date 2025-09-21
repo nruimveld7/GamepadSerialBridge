@@ -1,6 +1,7 @@
 #include "ApplicationLink.h"
+
 namespace GSB {
-  ApplicationLink::ApplicationLink(GSBConfig config) : internal::GSBBase(config) {
+  ApplicationLink::ApplicationLink(const LinkConfig& linkConfig) noexcept : internal::LinkBase(linkConfig) {
 
   }
 
@@ -9,218 +10,152 @@ namespace GSB {
   }
 
   // ------------------- callback pass-throughs -------------------
-  void ApplicationLink::SetButtonOnPress(void (*fxPtr)(int gamepadIndex, ButtonID buttonID)) {
+  void ApplicationLink::SetButtonOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
     for(uint8_t i = 0; i < m_gamepadCount; ++i) {
       m_gamepads[i].SetBtnOnPress(fxPtr);
     }
   }
 
-  void ApplicationLink::SetButtonOnRelease(void (*fxPtr)(int gamepadIndex, ButtonID buttonID)) {
-    for(uint8_t i = 0; i < m_gamepadCount; i++) {
+  void ApplicationLink::SetButtonOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
+    for(uint8_t i = 0; i < m_gamepadCount; ++i) {
       m_gamepads[i].SetBtnOnRelease(fxPtr);
     }
   }
 
-  void ApplicationLink::SetTriggerOnChange(void (*fxPtr)(int gamepadIndex, TriggerID triggerID, int value)) {
-    for(uint8_t i = 0; i < m_gamepadCount; i++) {
+  void ApplicationLink::SetTriggerOnChange(void (*fxPtr)(uint8_t gamepadIndex, TriggerID triggerID, int16_t value)) {
+    for(uint8_t i = 0; i < m_gamepadCount; ++i) {
       m_gamepads[i].SetTriggerOnChange(fxPtr);
     }
   }
 
-  void ApplicationLink::SetJoystickOnChange(void (*fxPtr)(int gamepadIndex, JoystickID joystickID, int xValue, int yValue)) {
-    for(uint8_t i = 0; i < m_gamepadCount; i++) {
+  void ApplicationLink::SetJoystickOnChange(void (*fxPtr)(uint8_t gamepadIndex, JoystickID joystickID, int16_t xValue, int16_t yValue)) {
+    for(uint8_t i = 0; i < m_gamepadCount; ++i) {
       m_gamepads[i].SetJoystickOnChange(fxPtr);
     }
   }
 
-  void ApplicationLink::SetSensorOnChange(void (*fxPtr)(int gamepadIndex, SensorID sensorID, int xValue, int yValue, int zValue)) {
-    for(uint8_t i = 0; i < m_gamepadCount; i++) {
+  void ApplicationLink::SetBatteryOnChange(void (*fxPtr)(uint8_t gamepadIndex, BatteryID batteryID, uint8_t value)) {
+    for(uint8_t i = 0; i < m_gamepadCount; ++i) {
+      m_gamepads[i].SetBatteryOnChange(fxPtr);
+    }
+  }
+
+  void ApplicationLink::SetSensorOnChange(void (*fxPtr)(uint8_t gamepadIndex, SensorID sensorID, int16_t xValue, int16_t yValue, int16_t zValue)) {
+    for(uint8_t i = 0; i < m_gamepadCount; ++i) {
       m_gamepads[i].SetSensorOnChange(fxPtr);
     }
   }
 
   // ------------------- per-controller tolerance setters -------------------
-  void ApplicationLink::SetTriggerTolerance(int gamepadIndex, TriggerID triggerID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetTriggerTolerance(uint8_t gamepadIndex, TriggerID triggerID, uint16_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetTriggerTolerance(triggerID, tolerance);
   }
 
-  void ApplicationLink::SetJoystickTolerance(int gamepadIndex, JoystickID joystickID, int xTolerance, int yTolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetJoystickTolerance(uint8_t gamepadIndex, JoystickID joystickID, uint16_t xTolerance, uint16_t yTolerance) {
+    if (ggamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetJoystickTolerance(joystickID, xTolerance, yTolerance);
   }
 
-  void ApplicationLink::SetJoystickToleranceX(int gamepadIndex, JoystickID joystickID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetJoystickToleranceX(uint8_t gamepadIndex, JoystickID joystickID, uint16_t tolerance) {
+    if (ggamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetJoystickToleranceX(joystickID, tolerance);
   }
 
-  void ApplicationLink::SetJoystickToleranceY(int gamepadIndex, JoystickID joystickID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetJoystickToleranceY(uint8_t gamepadIndex, JoystickID joystickID, uint16_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetJoystickToleranceY(joystickID, tolerance);
   }
 
-  void ApplicationLink::SetSensorTolerance(int gamepadIndex, SensorID sensorID, int xTolerance, int yTolerance, int zTolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetBatteryTolerance(uint8_t gamepadIndex, BatteryID batteryID, uint8_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
+      return;
+    }
+    m_gamepads[gamepadIndex].SetBatteryTolerance(batteryID, tolerance);
+  }
+
+  void ApplicationLink::SetSensorTolerance(uint8_t gamepadIndex, SensorID sensorID, uint16_t xTolerance, uint16_t yTolerance, uint16_t zTolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetSensorTolerance(sensorID, xTolerance, yTolerance, zTolerance);
   }
 
-  void ApplicationLink::SetSensorToleranceX(int gamepadIndex, SensorID sensorID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetSensorToleranceX(uint8_t gamepadIndex, SensorID sensorID, uint16_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetSensorToleranceX(sensorID, tolerance);
   }
 
-  void ApplicationLink::SetSensorToleranceY(int gamepadIndex, SensorID sensorID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetSensorToleranceY(uint8_t gamepadIndex, SensorID sensorID, uint16_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetSensorToleranceY(sensorID, tolerance);
   }
 
-  void ApplicationLink::SetSensorToleranceZ(int gamepadIndex, SensorID sensorID, int tolerance) {
-    if (gamepadIndex < 0 || gamepadIndex >= m_gamepadCount) {
+  void ApplicationLink::SetSensorToleranceZ(uint8_t gamepadIndex, SensorID sensorID, uint16_t tolerance) {
+    if (gamepadIndex >= m_gamepadCount) {
       return;
     }
     m_gamepads[gamepadIndex].SetSensorToleranceZ(sensorID, tolerance);
   }
 
   // ------------------- serial ingest -------------------
-  void ApplicationLink::ParseBinary(const uint8_t* data, size_t length) {
-    if (data == nullptr || length != s_binaryPayloadLength) {
+  void ApplicationLink::ParseSerial(const uint8_t* data, size_t length) noexcept {
+    if (data == nullptr || length != sizeof(internal::Status)) {
       Log(F("Invalid Binary Payload Length"));
       return;
     }
-    FrameData frame{};
-    frame.gamepadIndex = static_cast<int>(UInt8AtOffset(data, 0));
-    if (frame.gamepadIndex < 0 || frame.gamepadIndex >= m_gamepadCount) {
+    internal::Status status{};
+    status.gamepadIndex = UInt8AtOffset(data, 0);
+    if (status.gamepadIndex >= GetGamepadCount()) {
       Log(F("Invalid Binary Payload - Invalid Gamepad Index"));
       return;
     }
-    frame.dpadMask = UInt8AtOffset(data, 1);
-    frame.mainButtonsMask  = UInt16AtOffset(data, 2);
-    frame.joystick1X = Int16AtOffset(data, 4);
-    frame.joystick1Y = Int16AtOffset(data, 6);
-    frame.joystick2X = Int16AtOffset(data, 8);
-    frame.joystick2Y = Int16AtOffset(data, 10);
-    frame.trigger1 = Int16AtOffset(data, 12);
-    frame.trigger2 = Int16AtOffset(data, 14);
-    frame.miscButtonsMask = UInt8AtOffset(data, 16);
-    frame.sensor1X = Int16AtOffset(data, 18);
-    frame.sensor1Y = Int16AtOffset(data, 20);
-    frame.sensor1Z = Int16AtOffset(data, 22);
-    frame.sensor2X = Int16AtOffset(data, 24);
-    frame.sensor2Y = Int16AtOffset(data, 26);
-    frame.sensor2Z = Int16AtOffset(data, 28);
-    ApplyFrame(frame);
+    status.dpadMask = UInt8AtOffset(data, 1);
+    status.mainButtonsMask  = UInt16AtOffset(data, 2);
+    status.joystick1X = Int16AtOffset(data, 4);
+    status.joystick1Y = Int16AtOffset(data, 6);
+    status.joystick2X = Int16AtOffset(data, 8);
+    status.joystick2Y = Int16AtOffset(data, 10);
+    status.trigger1 = Int16AtOffset(data, 12);
+    status.trigger2 = Int16AtOffset(data, 14);
+    status.miscButtonsMask = UInt8AtOffset(data, 16);
+    status.battery = UInt8AtOffset(data, 17);
+    status.sensor1X = Int16AtOffset(data, 18);
+    status.sensor1Y = Int16AtOffset(data, 20);
+    status.sensor1Z = Int16AtOffset(data, 22);
+    status.sensor2X = Int16AtOffset(data, 24);
+    status.sensor2Y = Int16AtOffset(data, 26);
+    status.sensor2Z = Int16AtOffset(data, 28);
+    ApplyStatus(status);
   }
 
-  void ApplicationLink::ParseASCII(const char* data, size_t length) {
-    if (data == nullptr || length == 0) {
-      Log(F("Invalid ASCII Payload Length!"));
+  void ApplicationLink::ApplyStatus(const internal::Status& status) {
+    if (status.gamepadIndex >= m_gamepadCount) {
       return;
     }
-    // Expect 16 data fields plus mandatory trailing "csum=XXXX"
-    static constexpr size_t s_requiredFieldCount = 16;
-    const char* fieldPtrs[s_requiredFieldCount + 1];
-    size_t fieldLengths[s_requiredFieldCount + 1];
-    size_t fieldCount = 0;
-    fieldPtrs[0] = data;
-    fieldLengths[0] = 0;
-    fieldCount = 1;
-    size_t currentLen = 0;
-    for (size_t i = 0; i < length; ++i) {
-      const char character = data[i];
-      if (character == '|') {
-        fieldLengths[fieldCount - 1] = currentLen;
-        currentLen = 0;
-        if (fieldCount < s_requiredFieldCount + 1) {
-          fieldPtrs[fieldCount] = data + i + 1;
-          fieldLengths[fieldCount] = 0;
-          ++fieldCount;
-        } else {
-          Log(F("Invalid ASCII Payload - Too Many Fields"));
-          return;
-        }
-      } else {
-        ++currentLen;
-      }
-    }
-    fieldLengths[fieldCount - 1] = currentLen;
-
-    if (fieldCount != s_requiredFieldCount + 1) {
-      Log(F("Invalid ASCII Payload - Missing Checksum"));
-      return;
-    }
-    // Parse trailing "checksum=XXXX"
-    const char checksumPrefix[] = "checksum=";
-    const size_t checksumPrefixLen = sizeof(checksumPrefix) - 1;
-
-    uint16_t checksumVal = 0;
-    if (!(fieldLengths[s_requiredFieldCount] >= checksumPrefixLen &&
-          memcmp(fieldPtrs[s_requiredFieldCount], checksumPrefix, checksumPrefixLen) == 0 &&
-          StrToHexU16(fieldPtrs[s_requiredFieldCount] + checksumPrefixLen,
-                      fieldLengths[s_requiredFieldCount] - checksumPrefixLen,
-                      checksumVal))) {
-      Log(F("Invalid ASCII Payload - Incorrect Checksum"));
-      return;
-    }
-    // CRC over the data substring: from data[0] up to the '|' before csum
-    const size_t crcLen = static_cast<size_t>((fieldPtrs[s_requiredFieldCount] - 1) - data);
-    const uint16_t crc = CRC16_CCITT(reinterpret_cast<const uint8_t*>(data), crcLen);
-    if (crc != checksumVal) {
-      Log(F("Invalid ASCII Payload - Failed CRC"));
-      return;
-    }
-    FrameData frame{};
-    frame.gamepadIndex = static_cast<int>(StrToInt(fieldPtrs[0],  fieldLengths[0]));
-    if (frame.gamepadIndex < 0 || frame.gamepadIndex >= m_gamepadCount) {
-      Log(F("Invalid Gamepad!"));
-      return;
-    }
-    frame.dpadMask = static_cast<uint8_t>(StrToInt(fieldPtrs[1], fieldLengths[1]));
-    frame.mainButtonsMask = static_cast<uint16_t>(StrToInt(fieldPtrs[2], fieldLengths[2]));
-    frame.joystick1X = static_cast<int>(StrToInt(fieldPtrs[3], fieldLengths[3]));
-    frame.joystick1Y = static_cast<int>(StrToInt(fieldPtrs[4], fieldLengths[4]));
-    frame.joystick2X = static_cast<int>(StrToInt(fieldPtrs[5], fieldLengths[5]));
-    frame.joystick2Y = static_cast<int>(StrToInt(fieldPtrs[6], fieldLengths[6]));
-    frame.trigger1 = static_cast<int>(StrToInt(fieldPtrs[7], fieldLengths[7]));
-    frame.trigger2 = static_cast<int>(StrToInt(fieldPtrs[8], fieldLengths[8]));
-    frame.miscButtonsMask  = static_cast<uint8_t>(StrToInt(fieldPtrs[9], fieldLengths[9]));
-    frame.sensor1X = static_cast<int>(StrToInt(fieldPtrs[10], fieldLengths[10]));
-    frame.sensor1Y = static_cast<int>(StrToInt(fieldPtrs[11], fieldLengths[11]));
-    frame.sensor1Z = static_cast<int>(StrToInt(fieldPtrs[12], fieldLengths[12]));
-    frame.sensor2X = static_cast<int>(StrToInt(fieldPtrs[13], fieldLengths[13]));
-    frame.sensor2Y = static_cast<int>(StrToInt(fieldPtrs[14], fieldLengths[14]));
-    frame.sensor2Z = static_cast<int>(StrToInt(fieldPtrs[15], fieldLengths[15]));
-    ApplyFrame(frame);
-  }
-
-  void ApplicationLink::ApplyFrame(const FrameData& frame) {
-    if (frame.gamepadIndex < 0 || frame.gamepadIndex >= m_gamepadCount) {
-      return;
-    }
-    Gamepad& gamepad = m_gamepads[frame.gamepadIndex];
-    HandleDPad(gamepad, frame.dpadMask);
-    HandleMainButtons(gamepad, frame.mainButtonsMask);
-    HandleJoystick(gamepad, JoystickID::JOYSTICK_1, frame.joystick1X, frame.joystick1Y);
-    HandleJoystick(gamepad, JoystickID::JOYSTICK_2, frame.joystick2X, frame.joystick2Y);
-    HandleTrigger(gamepad, TriggerID::TRIGGER_1, frame.trigger1);
-    HandleTrigger(gamepad, TriggerID::TRIGGER_2, frame.trigger2);
-    HandleMiscButtons(gamepad, frame.miscButtonsMask);
-    HandleSensor(gamepad, SensorID::SENSOR_1, frame.sensor1X, frame.sensor1Y, frame.sensor1Z);
-    HandleSensor(gamepad, SensorID::SENSOR_2, frame.sensor2X, frame.sensor2Y, frame.sensor2Z);
+    Gamepad& gamepad = GetGamepad(status.gamepadIndex);
+    HandleDPad(gamepad, status.dpadMask);
+    HandleMainButtons(gamepad, status.mainButtonsMask);
+    HandleJoystick(gamepad, JoystickID::JOYSTICK_1, status.joystick1X, status.joystick1Y);
+    HandleJoystick(gamepad, JoystickID::JOYSTICK_2, status.joystick2X, status.joystick2Y);
+    HandleTrigger(gamepad, TriggerID::TRIGGER_1, status.trigger1);
+    HandleTrigger(gamepad, TriggerID::TRIGGER_2, status.trigger2);
+    HandleMiscButtons(gamepad, status.miscButtonsMask);
+    HandleBattery(gamepad, status.battery);
+    HandleSensor(gamepad, SensorID::SENSOR_1, status.sensor1X, status.sensor1Y, status.sensor1Z);
+    HandleSensor(gamepad, SensorID::SENSOR_2, status.sensor2X, status.sensor2Y, status.sensor2Z);
   }
 
   void ApplicationLink::HandleDPad(Gamepad& gamepad, uint8_t bitfield) {
@@ -235,11 +170,11 @@ namespace GSB {
     }
   }
 
-  void ApplicationLink::HandleJoystick(Gamepad& gamepad, JoystickID joystickID, int xValue, int yValue) {
+  void ApplicationLink::HandleJoystick(Gamepad& gamepad, JoystickID joystickID, int16_t xValue, int16_t yValue) {
     gamepad.SetJoystick(joystickID, xValue, yValue);
   }
 
-  void ApplicationLink::HandleTrigger(Gamepad& gamepad, TriggerID triggerID, int value) {
+  void ApplicationLink::HandleTrigger(Gamepad& gamepad, TriggerID triggerID, int16_t value) {
     gamepad.SetTrigger(triggerID, value);
   }
 
@@ -249,7 +184,11 @@ namespace GSB {
     }
   }
 
-  void ApplicationLink::HandleSensor(Gamepad& gamepad, SensorID sensorID, int xValue, int yValue, int zValue) {
+  void ApplicationLink::HandleBattery(Gamepad& gamepad, BatteryID batteryID, uint8_t value) {
+    gamepad.SetBattery(batteryID, value);
+  }
+
+  void ApplicationLink::HandleSensor(Gamepad& gamepad, SensorID sensorID, int16_t xValue, int16_t yValue, int16_t zValue) {
     gamepad.SetSensor(sensorID, xValue, yValue, zValue);
   }
-}
+} // namespace GSB

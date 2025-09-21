@@ -1,10 +1,8 @@
 #include "Inputs.h"
-#include <stdlib.h>
 
 namespace GSB {
   // ----- Button -----
-  Button::Button()
-    : m_pressed(false) {
+  Button::Button() : m_pressed(false) {
 
   }
 
@@ -21,45 +19,51 @@ namespace GSB {
   }
 
   // ----- Axis -----
-  Axis::Axis()
-    : m_value(0), m_tolerance(1) {
+  Axis::Axis() : m_tolerance(1), m_value(0)  {
 
   }
 
-  void Axis::SetTolerance(int tolerance) {
+  void Axis::SetTolerance(uint16_t tolerance) {
+    if(tolerance == 0) {
+      tolerance = 1;
+    }
+    if(tolerance > 32767) {
+      tolerance = 32767;
+    }
     m_tolerance = tolerance;
   }
 
-  bool Axis::SetValue(int value) {
+  bool Axis::SetValue(int16_t value) {
     if (value == m_value) {
       return false;
     }
-    if (abs(m_value - value) >= m_tolerance) {
+    int32_t difference  = static_cast<int32_t>(value) - static_cast<int32_t>(m_value);
+    difference = (difference >= 0) ? difference : -difference; 
+    if (difference >= static_cast<int32_t>(m_tolerance)) {
       m_value = value;
       return true;
     }
     return false;
   }
 
-  int Axis::GetValue() const {
+  int16_t Axis::GetValue() const {
     return m_value;
   }
 
   // ----- Trigger (1D axis + button) -----
-  Trigger::Trigger()
-    : m_axis() {
+  Trigger::Trigger() : m_axis() {
 
   }
 
-  void Trigger::SetTolerance(int tolerance) {
+  void Trigger::SetTolerance(uint16_t tolerance) {
     m_axis.SetTolerance(tolerance);
   }
 
-  bool Trigger::SetValue(int triggerVal) {
+  bool Trigger::SetValue(int16_t triggerVal) {
     return m_axis.SetValue(triggerVal);
   }
 
-  int Trigger::GetValue() const {
+  int16_t Trigger::GetValue() const {
     return m_axis.GetValue();
   }
 
@@ -72,32 +76,31 @@ namespace GSB {
   }
 
   // ----- Joystick (2D axis + button) -----
-  Joystick::Joystick()
-    : m_xAxis(), m_yAxis() {
+  Joystick::Joystick() : m_xAxis(), m_yAxis() {
 
   }
 
-  void Joystick::SetToleranceX(int tolerance) {
+  void Joystick::SetToleranceX(uint16_t tolerance) {
     m_xAxis.SetTolerance(tolerance);
   }
 
-  void Joystick::SetToleranceY(int tolerance) {
+  void Joystick::SetToleranceY(uint16_t tolerance) {
     m_yAxis.SetTolerance(tolerance);
   }
 
-  bool Joystick::SetValueX(int value) {
+  bool Joystick::SetValueX(int16_t value) {
     return m_xAxis.SetValue(value);
   }
 
-  bool Joystick::SetValueY(int value) {
+  bool Joystick::SetValueY(int16_t value) {
     return m_yAxis.SetValue(value);
   }
 
-  int Joystick::GetValueX() const {
+  int16_t Joystick::GetValueX() const {
     return m_xAxis.GetValue();
   }
 
-  int Joystick::GetValueY() const {
+  int16_t Joystick::GetValueY() const {
     return m_yAxis.GetValue();
   }
 
@@ -117,45 +120,73 @@ namespace GSB {
     return m_yAxis;
   }
 
-  // ----- Sensor (3D axes, no button) -----
-  Sensor::Sensor()
-    : m_xAxis(), m_yAxis(), m_zAxis() {
+  // ----- Battery -----
+  Battery::Battery() : m_value() {
 
   }
 
-  void Sensor::SetToleranceX(int tolerance) {
+  void Battery::SetTolerance(uint8_t tolerance) {
+    if(tolerance == 0) {
+      tolerance = 1;
+    }
+    m_tolerance = tolerance;
+  }
+
+  bool Battery::SetValue(uint8_t value) {
+    if (value == m_value) {
+      return false;
+    }
+    int16_t difference  = static_cast<int16_t>(value) - static_cast<int16_t>(m_value);
+    difference = (difference >= 0) ? difference : -difference; 
+    if (difference >= static_cast<int16_t>(m_tolerance)) {
+      m_value = value;
+      return true;
+    }
+    return false;
+  }
+
+  uint8_t Battery::GetValue() const {
+    return m_value;
+  }
+
+  // ----- Sensor (3D axes, no button) -----
+  Sensor::Sensor() : m_xAxis(), m_yAxis(), m_zAxis() {
+
+  }
+
+  void Sensor::SetToleranceX(uint16_t tolerance) {
     m_xAxis.SetTolerance(tolerance);
   }
 
-  void Sensor::SetToleranceY(int tolerance) {
+  void Sensor::SetToleranceY(uint16_t tolerance) {
     m_yAxis.SetTolerance(tolerance);
   }
 
-  void Sensor::SetToleranceZ(int tolerance) {
+  void Sensor::SetToleranceZ(uint16_t tolerance) {
     m_zAxis.SetTolerance(tolerance);
   }
 
-  bool Sensor::SetValueX(int valueX) {
+  bool Sensor::SetValueX(int16_t valueX) {
     return m_xAxis.SetValue(valueX);
   }
 
-  bool Sensor::SetValueY(int valueY) {
+  bool Sensor::SetValueY(int16_t valueY) {
     return m_yAxis.SetValue(valueY);
   }
 
-  bool Sensor::SetValueZ(int valueZ) {
+  bool Sensor::SetValueZ(int16_t valueZ) {
     return m_zAxis.SetValue(valueZ);
   }
 
-  int Sensor::GetValueX() const {
+  int16_t Sensor::GetValueX() const {
     return m_xAxis.GetValue();
   }
 
-  int Sensor::GetValueY() const {
+  int16_t Sensor::GetValueY() const {
     return m_yAxis.GetValue();
   }
 
-  int Sensor::GetValueZ() const {
+  int16_t Sensor::GetValueZ() const {
     return m_zAxis.GetValue();
   }
 
@@ -182,4 +213,4 @@ namespace GSB {
   const Axis& Sensor::GetZAxis() const {
     return m_zAxis;
   }
-}
+} // namepsace GSB
