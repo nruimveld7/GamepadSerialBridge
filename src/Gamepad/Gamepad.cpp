@@ -9,8 +9,14 @@ namespace GSB {
       m_joystickOnChange(nullptr),
       m_batteryOnChange(nullptr),
       m_sensorOnChange(nullptr),
+      m_rumbleOnChange(nullptr),
+      m_playerLedOnChange(nullptr),
+      m_colorLedOnChange(nullptr),
+      m_onDisconnect(nullptr),
       m_index(0) {
-
+    for (uint8_t i = 0; i < PlayerLedCount(); ++i) {
+      m_playerLeds[i].SetID(static_cast<PlayerLedID>(i));
+    }
   }
 
   Gamepad::Gamepad(uint8_t index)
@@ -20,16 +26,22 @@ namespace GSB {
       m_joystickOnChange(nullptr),
       m_batteryOnChange(nullptr),
       m_sensorOnChange(nullptr),
+      m_rumbleOnChange(nullptr),
+      m_playerLedOnChange(nullptr),
+      m_colorLedOnChange(nullptr),
+      m_onDisconnect(nullptr),
       m_index(index) {
-
+    for (uint8_t i = 0; i < PlayerLedCount(); ++i) {
+      m_playerLeds[i].SetID(static_cast<PlayerLedID>(i));
+    }
   }
 
   // Inputs
-  void Gamepad::SetBtnOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
+  void Gamepad::SetButtonOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
     m_buttonOnPress = fxPtr;
   }
 
-  void Gamepad::SetBtnOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
+  void Gamepad::SetButtonOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) {
     m_buttonOnRelease = fxPtr;
   }
 
@@ -259,7 +271,7 @@ namespace GSB {
     m_playerLedOnChange = fxPtr;
   }
 
-  void Gamepad::SetColorLedOnChange(void (*fxPtr)(uint8_t gamepadIndex, ColorLedID colorLedID, uint8_t red, uint8_t green, uint8_t blue)) {
+  void Gamepad::SetColorLedOnChange(void (*fxPtr)(uint8_t gamepadIndex, ColorLedID colorLedID, bool illuminated, uint8_t red, uint8_t green, uint8_t blue)) {
     m_colorLedOnChange = fxPtr;
   }
 
@@ -272,23 +284,17 @@ namespace GSB {
       return;
     }
     Rumble& rumble = GetRumble(rumbleID);
-    if (rumble.Set(force, duration)) {
-      if (m_rumbleOnChange) {
-        m_rumbleOnChange(m_index, rumbleID, rumble.GetForce(), rumble.GetDuration());
-      }
+    rumble.Set(force, duration);
+    if (m_rumbleOnChange) {
+      m_rumbleOnChange(m_index, rumbleID, rumble.GetForce(), rumble.GetDuration());
     }
   }
 
-  void Gamepad::SetPlayerLeds(uint8_t player) {
-    for(PlayerLed& playerLed : m_playerLeds) {
-      if(playerLed.SetPlayer(player)) {
-        if(m_playerLedOnChange) {
-          PlayerLedID playerLedID = playerLed.GetID();
-          if(!IsValid(playerLedID)) {
-            continue;
-          }
-          m_playerLedOnChange(m_index, playerLedID, playerLed.GetIlluminated());
-        }
+  void Gamepad::SetPlayerLeds(uint8_t playerBitmask) {
+    for (uint8_t i = 0; i < PlayerLedCount(); ++i) {
+      PlayerLed& playerLed = m_playerLeds[i];
+      if (playerLed.SetPlayer(playerBitmask) && m_playerLedOnChange) {
+        m_playerLedOnChange(m_index, static_cast<PlayerLedID>(i), playerLed.GetIlluminated());
       }
     }
   }
@@ -310,35 +316,34 @@ namespace GSB {
       return;
     }
     PlayerLed& playerLed = GetPlayerLed(playerLedID);
-    if (playerLed.Toggle()) {
-      if (m_playerLedOnChange) {
-        m_playerLedOnChange(m_index, playerLedID, playerLed.GetIlluminated());
-      }
+    playerLed.Toggle();
+    if (m_playerLedOnChange) {
+      m_playerLedOnChange(m_index, playerLedID, playerLed.GetIlluminated());
     }
   }
 
-  void Gamepad::SetColorLed(ColorLedID colorLedID, uint8_t red, uint8_t green, uint8_t blue) {
+  void Gamepad::SetColorLed(ColorLedID colorLedID, bool illuminated, uint8_t red, uint8_t green, uint8_t blue) {
     if (!IsValid(colorLedID)) {
       return;
     }
     ColorLed& colorLed = GetColorLed(colorLedID);
-    if (colorLed.SetColor(red, green, blue)) {
+    if (colorLed.SetColor(red, green, blue) || colorLed.Set(illuminated)) {
       if (m_colorLedOnChange) {
-        internal::Color color = colorLed.GetColor();
-        m_colorLedOnChange(m_index, colorLedID, color.red, color.green, color.blue);
+        Color color = colorLed.GetColor();
+        m_colorLedOnChange(m_index, colorLedID, colorLed.GetIlluminated(), color.red, color.green, color.blue);
       }
     }
   }
 
-  void Gamepad::SetColorLed(ColorLedID colorLedID, internal::Color color) {
+  void Gamepad::SetColorLed(ColorLedID colorLedID, bool illuminated, Color color) {
     if (!IsValid(colorLedID)) {
       return;
     }
     ColorLed& colorLed = GetColorLed(colorLedID);
-    if (colorLed.SetColor(color)) {
+    if (colorLed.SetColor(color) || colorLed.Set(illuminated)) {
       if (m_colorLedOnChange) {
-        internal::Color color = colorLed.GetColor();
-        m_colorLedOnChange(m_index, colorLedID, color.red, color.green, color.blue);
+        color = colorLed.GetColor();
+        m_colorLedOnChange(m_index, colorLedID, colorLed.GetIlluminated(), color.red, color.green, color.blue);
       }
     }
   }
@@ -348,16 +353,17 @@ namespace GSB {
       return;
     }
     ColorLed& colorLed = GetColorLed(colorLedID);
-    if (colorLed.Toggle()) {
-      if (m_colorLedOnChange) {
-        internal::Color color = colorLed.GetColor();
-        m_colorLedOnChange(m_index, colorLedID, color.red, color.green, color.blue);
-      }
+    colorLed.Toggle();
+    if (m_colorLedOnChange) {
+      Color color = colorLed.GetColor();
+      m_colorLedOnChange(m_index, colorLedID, colorLed.GetIlluminated(), color.red, color.green, color.blue);
     }
   }
 
-  void Gamepad::Disconnect() {
-
+  void Gamepad::SetDisconnect() {
+    if (m_onDisconnect) {
+      m_onDisconnect(m_index);
+    }
   }
 
 
@@ -401,5 +407,30 @@ namespace GSB {
 
   const Sensor& Gamepad::GetSensor(SensorID sensorID) const {
     return m_sensors[SensorIndex(sensorID)];
+  }
+
+  // Outputs
+  Rumble& Gamepad::GetRumble(RumbleID rumbleID) {
+    return m_rumbles[RumbleIndex(rumbleID)];
+  }
+  
+  const Rumble& Gamepad::GetRumble(RumbleID rumbleID) const {
+    return m_rumbles[RumbleIndex(rumbleID)];
+  }
+
+  PlayerLed& Gamepad::GetPlayerLed(PlayerLedID playerLedID) {
+    return m_playerLeds[PlayerLedIndex(playerLedID)];
+  }
+
+  const PlayerLed& Gamepad::GetPlayerLed(PlayerLedID playerLedID) const {
+    return m_playerLeds[PlayerLedIndex(playerLedID)];
+  }
+
+  ColorLed& Gamepad::GetColorLed(ColorLedID colorLedID) {
+    return m_colorLeds[ColorLedIndex(colorLedID)];
+  }
+
+  const ColorLed& Gamepad::GetColorLed(ColorLedID colorLedID) const {
+    return m_colorLeds[ColorLedIndex(colorLedID)];
   }
 } // namespace GSB

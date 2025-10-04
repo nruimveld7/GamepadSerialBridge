@@ -1,68 +1,58 @@
 #pragma once
 
 #include <Arduino.h>
+#include "OutputIDs.h"
 
 namespace GSB {
     class Rumble {
         public:
-            Rumble();
-            bool Set(uint8_t force, uint8_t duration);
-            uint8_t GetForce();
-            uint8_t GetDuration();
+            Rumble() = default;
+            void Set(uint8_t force, uint8_t duration);
+            uint8_t GetForce() const;
+            uint8_t GetDuration() const;
         
         private:
-            bool m_triggered{false};
             uint8_t m_force{0};
             uint8_t m_duration{0};
     };
 
     class Led {
         public:
-            Led();
+            Led() = default;
             bool Set(bool illuminated);
-            bool Toggle();
-            bool GetIlluminated();
+            void Toggle();
+            bool GetIlluminated() const;
         
-            private:
-                bool m_illuminated{false};
+        protected:
+            bool m_illuminated{false};
     };
 
     class PlayerLed : public Led {
         public:
-            PlayerLed(uint8_t index);
-            bool SetPlayer(uint8_t player);
+            PlayerLed() = default;
+            PlayerLed(PlayerLedID id);
+            void SetID(PlayerLedID id);
+            bool SetPlayer(uint8_t playerBitmask);
+            PlayerLedID GetID() const;
         
         private:
-            uint8_t m_index{0};
-    }
+            PlayerLedID m_id{PlayerLedID::PLAYER_LED_1};
+    };
+
+    struct Color {
+        uint8_t red{0};
+        uint8_t green{0};
+        uint8_t blue{0};
+    };
 
     class ColorLed : public Led {
         public:
-            namespace internal {
-                struct Color {
-                    uint8_t red{0};
-                    uint8_t green{0};
-                    uint8_t blue{0};
-                };
-            } // namepsace internal
-            ColorLed();
+            ColorLed() = default;
             bool SetColor(uint8_t red, uint8_t green, uint8_t blue);
-            bool SetColor(internal::Color color);
-            internal::Color GetColor();
+            bool SetColor(Color color);
+            Color GetColor() const;
 
         private:
-            internal::Color m_color;
-    };
-
-    
-
-    class Disconnect {
-        public:
-            Disconnect();
-            void SetDisconnect();
-            bool Triggered();
-        
-        private:
-            bool m_triggered{false};
+            Color m_color{};
     };
 } // namespace GSB

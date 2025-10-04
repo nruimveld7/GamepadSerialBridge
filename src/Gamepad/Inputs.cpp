@@ -2,10 +2,6 @@
 
 namespace GSB {
   // ----- Button -----
-  Button::Button() : m_pressed(false) {
-
-  }
-
   bool Button::SetPressed(bool pressed) {
     if (m_pressed == pressed) {
       return false;
@@ -19,10 +15,6 @@ namespace GSB {
   }
 
   // ----- Axis -----
-  Axis::Axis() : m_tolerance(1), m_value(0)  {
-
-  }
-
   void Axis::SetTolerance(uint16_t tolerance) {
     if(tolerance == 0) {
       tolerance = 1;
@@ -51,10 +43,6 @@ namespace GSB {
   }
 
   // ----- Trigger (1D axis + button) -----
-  Trigger::Trigger() : m_axis() {
-
-  }
-
   void Trigger::SetTolerance(uint16_t tolerance) {
     m_axis.SetTolerance(tolerance);
   }
@@ -76,10 +64,6 @@ namespace GSB {
   }
 
   // ----- Joystick (2D axis + button) -----
-  Joystick::Joystick() : m_xAxis(), m_yAxis() {
-
-  }
-
   void Joystick::SetToleranceX(uint16_t tolerance) {
     m_xAxis.SetTolerance(tolerance);
   }
@@ -121,10 +105,6 @@ namespace GSB {
   }
 
   // ----- Battery -----
-  Battery::Battery() : m_value() {
-
-  }
-
   void Battery::SetTolerance(uint8_t tolerance) {
     if(tolerance == 0) {
       tolerance = 1;
@@ -150,10 +130,6 @@ namespace GSB {
   }
 
   // ----- Sensor (3D axes, no button) -----
-  Sensor::Sensor() : m_xAxis(), m_yAxis(), m_zAxis() {
-
-  }
-
   void Sensor::SetToleranceX(uint16_t tolerance) {
     m_xAxis.SetTolerance(tolerance);
   }
@@ -213,4 +189,4 @@ namespace GSB {
   const Axis& Sensor::GetZAxis() const {
     return m_zAxis;
   }
-} // namepsace GSB
+} // namespace GSB

@@ -7,8 +7,8 @@ namespace GSB {
         m_uartConfig(linkConfig.uartConfig),
         m_linkSerial(linkConfig.linkSerial),
         m_logSerial(linkConfig.logSerial) {
-      if (m_gamepadCount > MAXCONTROLLERS) {
-        m_gamepadCount = MAXCONTROLLERS;
+      if (m_gamepadCount > s_maxControllers) {
+        m_gamepadCount = s_maxControllers;
       }
       for (uint8_t i = 0; i < m_gamepadCount; ++i) {
         m_gamepads[i] = Gamepad(i);
@@ -27,6 +27,10 @@ namespace GSB {
 
     void LinkBase::Loop() noexcept {
       ReadSerial();
+    }
+
+    uint8_t LinkBase::MaxControllers() noexcept {
+      return s_maxControllers;
     }
 
     uint8_t LinkBase::GetGamepadCount() const noexcept {
@@ -57,18 +61,16 @@ namespace GSB {
       uint8_t raw[s_maxPacketSize];
       size_t pos = 0;
       raw[pos++] = s_protoVersion;
-      raw[pos++] = 0x00; // type 0 = generic/status; subclasses may reinterpret
-      raw[pos++] = m_txSequence++; // sequence (wrap ok)
       if (length && data) {
-        memcpy(raw + pos, data, length);
+        CopyBytes(raw + pos, data, length);
         pos += length;
       }
       const uint16_t crc = CRC16_CCITT(raw, pos);
-      raw[pos++] = static_cast<uint8_t>(crc & 0xFF);
-      raw[pos++] = static_cast<uint8_t>((crc >> 8) & 0xFF);
+      WriteLE16(raw + pos, crc);
+      pos += 2;
 
       uint8_t encoded[s_maxEncodedSize];
-      const size_t encodedLength = EncodeCOBS(raw, pos, encoded);
+      const size_t encodedLength = EncodeCOBS(raw, pos, encoded, s_maxEncodedSize);
       if (encodedLength == 0 || encodedLength > s_maxEncodedSize) {
         Log(F("COBS encode failed"));
         return false;
@@ -84,11 +86,11 @@ namespace GSB {
     }
 
     uint16_t LinkBase::UInt16AtOffset(const uint8_t* data, size_t offset) noexcept {
-      return static_cast<uint16_t>(data[offset]) | (static_cast<uint16_t>(data[offset + 1]) << 8);
+      return ReadLE16(data + offset);
     }
 
     int16_t LinkBase::Int16AtOffset(const uint8_t* data, size_t offset) noexcept {
-      return static_cast<int16_t>(UInt16AtOffset(data, offset));
+      return static_cast<int16_t>(ReadLE16(data + offset));
     }
 
     // ------------------- serial ingest -------------------
@@ -103,16 +105,15 @@ namespace GSB {
           if (m_rxLength > 0) {
             // Decode and dispatch
             uint8_t raw[s_maxPacketSize];
-            const size_t rawLen = DecodeCOBS(m_rxEncoded, m_rxLength, raw);
+            const size_t rawLen = DecodeCOBS(m_rxEncoded, m_rxLength, raw, s_maxPacketSize);
             m_rxLength = 0;
             if (rawLen >= s_headerSize + s_crcSize) {
               const size_t dataLen = rawLen - s_crcSize;
-              const uint16_t receivedCRC = static_cast<uint16_t>(raw[dataLen]) | (static_cast<uint16_t>(raw[dataLen+1]) << 8);
+              const uint16_t receivedCRC = ReadLE16(raw + dataLen);
               const uint16_t calculatedCRC  = CRC16_CCITT(raw, dataLen);
               if (receivedCRC == calculatedCRC) {
                 const uint8_t version = raw[0];
                 if (version == s_protoVersion) {
-                  // uint8_t type = raw[1]; uint8_t seq = raw[2];  // available if you add typed handlers later
                   const uint8_t* payload = raw + s_headerSize;
                   const size_t payloadLength = dataLen - s_headerSize;
                   ParseSerial(payload, payloadLength);
@@ -158,34 +159,59 @@ namespace GSB {
       return crc;
     }
 
-    // ================= COBS (tiny) =================
-    size_t LinkBase::EncodeCOBS(const uint8_t* in, size_t length, uint8_t* out) noexcept {
-      if (!in || !out) {
+    // ================= COBS =================
+    size_t LinkBase::EncodeCOBS(const uint8_t* in, size_t length, uint8_t* out, size_t maxOut) noexcept {
+      if (!in || !out || maxOut == 0) {
         return 0;
       }
-      uint8_t* outStart = out;
-      uint8_t* codePtr = out++; // reserve code byte
+      // Worst-case expansion: +1 code byte per 254 data bytes, +1 for the first code byte.
+      const size_t worst = length + (length / 254) + 1;
+      if (worst > maxOut) {
+        return 0;
+      }
+      uint8_t* const outStart = out;
+      // Reserve space for the first code byte
+      if (maxOut < 1) {
+        return 0;
+      }
+      uint8_t* codePtr = out++;
+      size_t remaining = maxOut - 1;
       uint8_t code = 1;
       for (size_t i = 0; i < length; ++i) {
         const uint8_t byte = in[i];
         if (byte == 0) {
+          // Close current block
           *codePtr = code;
+          if (remaining == 0) {
+            return 0;
+          }
           codePtr = out++;
+          --remaining;
           code = 1;
         } else {
+          if (remaining == 0) {
+            return 0;
+          }
           *out++ = byte;
+          --remaining;
           if (++code == 0xFF) {
+            // Block full: emit code and start a new block
             *codePtr = code;
+            if (remaining == 0) {
+              return 0;
+            }
             codePtr = out++;
+            --remaining;
             code = 1;
           }
         }
       }
+      // Finalize the last block
       *codePtr = code;
       return static_cast<size_t>(out - outStart);
     }
 
-    size_t LinkBase::DecodeCOBS(const uint8_t* in, size_t length, uint8_t* out) noexcept {
+    size_t LinkBase::DecodeCOBS(const uint8_t* in, size_t length, uint8_t* out, size_t maxOut) noexcept {
       if (!in || !out) {
         return 0;
       }
@@ -197,9 +223,15 @@ namespace GSB {
           return 0;
         }
         for (uint8_t i = 1; i < code; ++i) {
+          if (outLength >= maxOut) {
+            return 0;
+          }
           out[outLength++] = *in++;
         }
         if (code != 0xFF && in < end) {
+          if (outLength >= maxOut) {
+            return 0;
+          }
           out[outLength++] = 0;
         }
       }

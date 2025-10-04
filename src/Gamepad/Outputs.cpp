@@ -2,53 +2,78 @@
 
 namespace GSB {
   // ----- Rumble -----
-  Rumble::Rumble() : m_force(0), m_duration(0) {
-
-  }
-
-  bool Rumble::TurnOn(uint8_t force, uint8_t duration) {
+  void Rumble::Set(uint8_t force, uint8_t duration) {
     m_force = force;
     m_duration = duration;
-    return true;
+  }
+  
+  uint8_t Rumble::GetForce() const {
+    return m_force;
   }
 
-  void Rumble::TurnOff() {
-    m_force = 0;
-    m_duration = 0;
-    return true;
+  uint8_t Rumble::GetDuration() const {
+    return m_duration;
   }
 
-  bool 
-  // ----- LED -----
-  LED::LED() : m_illuminated(false) {
-
-  }
-
-  bool LED::TurnOn() {
-    if(m_illuminated) {
+  // ----- Led -----
+  bool Led::Set(bool illuminated) {
+    if (m_illuminated == illuminated) {
       return false;
     }
-    m_illuminated = true;
+    m_illuminated = illuminated;
     return true;
   }
 
-  void LED::TurnOff() {
-    if(!m_illuminated) {
-      return false;
+  void Led::Toggle() {
+    m_illuminated = !m_illuminated;
+  }
+
+  bool Led::GetIlluminated() const {
+    return m_illuminated;
+  }
+
+  // ----- PlayerLed -----
+  PlayerLed::PlayerLed(PlayerLedID id) : m_id(id) {
+
+  }
+
+  void PlayerLed::SetID(PlayerLedID id) {
+    m_id = id;
+  }
+
+  PlayerLedID PlayerLed::GetID() const {
+    return m_id;
+  }
+
+  bool PlayerLed::SetPlayer(uint8_t playerBitmask) {
+    const uint8_t bit = PlayerLedIndex(m_id);
+    if (bit >= PlayerLedCount() || bit >= 8) {
+      return Set(false);
     }
-    m_illuminated = false;
-    return true;
+    const bool illuminate = (playerBitmask & (uint8_t(1) << bit)) != 0;
+    return Set(illuminate);
   }
 
-  // ----- ColorLED -----
-  ColorLED::ColorLED() : m_red(0), m_green(0), m_blue(0), LED() {
-
+  // ----- ColorLed -----
+  bool ColorLed::SetColor(uint8_t red, uint8_t green, uint8_t blue) {
+    Color color{red, green, blue};
+    const bool illuminated = (red | green | blue) != 0;
+    const bool colorChange = (m_color.red != color.red) || (m_color.green != color.green) || (m_color.blue != color.blue);
+    const bool stateChange = (m_illuminated != illuminated);
+    if (colorChange) {
+      m_color = color;
+    }
+    if (stateChange) {
+      m_illuminated = illuminated;
+    }
+    return colorChange || stateChange;
   }
 
-  bool ColorLED::SetColor(uint8_t red, uint8_t green, uint8_t blue) {
-
+  bool ColorLed::SetColor(Color color) {
+    return SetColor(color.red, color.green, color.blue);
   }
 
-
-
+  Color ColorLed::GetColor() const {
+    return m_color;
+  }
 } // namespace GSB

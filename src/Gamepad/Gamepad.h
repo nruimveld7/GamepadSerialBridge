@@ -12,8 +12,8 @@ namespace GSB {
       Gamepad(uint8_t index);
 
       //Inputs
-      void SetBtnOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID));
-      void SetBtnOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID));
+      void SetButtonOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID));
+      void SetButtonOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID));
       void SetTriggerOnChange(void (*fxPtr)(uint8_t gamepadIndex, TriggerID triggerID, int16_t value));
       void SetJoystickOnChange(void (*fxPtr)(uint8_t gamepadIndex, JoystickID joystickID, int16_t xValue, int16_t yValue));
       void SetBatteryOnChange(void (*fxPtr)(uint8_t gamepadIndex, BatteryID batteryID, uint8_t value));
@@ -43,16 +43,17 @@ namespace GSB {
       //Outputs
       void SetRumbleOnChange(void (*fxPtr)(uint8_t gamepadIndex, RumbleID rumbleID, uint8_t force, uint8_t duration));
       void SetPlayerLedOnChange(void (*fxPtr)(uint8_t gamepadIndex, PlayerLedID playerLedID, bool illuminated));
-      void SetColorLedOnChange(void (*fxPtr)(uint8_t gamepadIndex, ColorLedID colorLedID, uint8_t red, uint8_t green, uint8_t blue));
+      void SetColorLedOnChange(void (*fxPtr)(uint8_t gamepadIndex, ColorLedID colorLedID, bool illuminated, uint8_t red, uint8_t green, uint8_t blue));
       void SetOnDisconnect(void (*fxPtr)(uint8_t gamepadIndex));
 
       void SetRumble(RumbleID rumbleID, uint8_t force, uint8_t duration);
-      void SetPlayerLeds(uint8_t player);
+      void SetPlayerLeds(uint8_t playerBitmask);
       void SetPlayerLed(PlayerLedID playerLedID, bool illuminated);
       void TogglePlayerLed(PlayerLedID playerLedID);
-      void SetColorLed(ColorLedID colorLedID, uint8_t red, uint8_t green, uint8_t blue);
+      void SetColorLed(ColorLedID colorLedID, bool illuminated, uint8_t red, uint8_t green, uint8_t blue);
+      void SetColorLed(ColorLedID colorLedID, bool illuminated, Color color);
       void ToggleColorLed(ColorLedID colorLedID);
-      void Disconnect();
+      void SetDisconnect();
 
     private:
       uint8_t m_index;
@@ -87,19 +88,16 @@ namespace GSB {
       const Rumble& GetRumble(RumbleID rumbleID) const;
       PlayerLed& GetPlayerLed(PlayerLedID playerLedID);
       const PlayerLed& GetPlayerLed(PlayerLedID playerLedID) const;
-      ColorLed& GetPlayerLed(ColorLedID playerLedID);
-      const ColorLed& GetPlayerLed(ColorLedID playerLedID) const;
-      Disconnect& GetDisconnect(DisconnectID disconnectID);
-      const Disconnect& GetDisconnect(DisconnectID disconnectID) const;
+      ColorLed& GetColorLed(ColorLedID colorLedID);
+      const ColorLed& GetColorLed(ColorLedID colorLedID) const;
 
       void (*m_rumbleOnChange)(uint8_t gamepadIndex, RumbleID rumbleID, uint8_t force, uint8_t duration);
       void (*m_playerLedOnChange)(uint8_t gamepadIndex, PlayerLedID playerLedID, bool illuminated);
-      void (*m_colorLedOnChange)(uint8_t gamepadIndex, ColorLedID colorLedID, uint8_t red, uint8_t green, uint8_t blue);
+      void (*m_colorLedOnChange)(uint8_t gamepadIndex, ColorLedID colorLedID, bool illuminated, uint8_t red, uint8_t green, uint8_t blue);
       void (*m_onDisconnect)(uint8_t gamepadIndex);
 
       Rumble m_rumbles[RumbleCount() + 1];
       PlayerLed m_playerLeds[PlayerLedCount() + 1];
       ColorLed m_colorLeds[ColorLedCount() + 1];
-      Disconnect m_disconnects[DisconnectCount() + 1];
   };
 } // namespace GSB

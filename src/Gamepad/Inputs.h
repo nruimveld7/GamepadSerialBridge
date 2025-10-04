@@ -5,7 +5,7 @@
 namespace GSB {
   class Button {
     public:
-      Button();
+      Button() = default;
       bool SetPressed(bool pressed);
       bool GetPressed() const;
 
@@ -15,7 +15,7 @@ namespace GSB {
 
   class Axis {
     public:
-      Axis();
+      Axis() = default;
       void SetTolerance(uint16_t tolerance);
       bool SetValue(int16_t value);
       int16_t GetValue() const;
@@ -27,7 +27,7 @@ namespace GSB {
 
   class Trigger {
     public:
-      Trigger();
+      Trigger() = default;
       void SetTolerance(uint16_t tolerance);
       bool SetValue(int16_t triggerVal);
       int16_t GetValue() const;
@@ -40,7 +40,7 @@ namespace GSB {
 
   class Joystick {
     public:
-      Joystick();
+      Joystick() = default;
       void SetToleranceX(uint16_t tolerance);
       void SetToleranceY(uint16_t tolerance);
       bool SetValueX(int16_t value);
@@ -59,7 +59,7 @@ namespace GSB {
 
   class Battery {
     public:
-      Battery();
+      Battery() = default;
       void SetTolerance(uint8_t tolerance);
       bool SetValue(uint8_t value);
       uint8_t GetValue() const;
@@ -71,7 +71,7 @@ namespace GSB {
 
   class Sensor {
     public:
-      Sensor();
+      Sensor() = default;
       void SetToleranceX(uint16_t tolerance);
       void SetToleranceY(uint16_t tolerance);
       void SetToleranceZ(uint16_t tolerance);
