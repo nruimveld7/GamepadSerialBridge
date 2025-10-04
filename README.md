@@ -1,4 +1,4 @@
-# Arduino-XBox-Controller-Handler
+# GamepadSerialBridge
 
 Parse controller state strings sent from an **ESP32 (Bluepad32)** and expose **easy change‑callbacks** on an Arduino‑compatible MCU with more I/O (e.g., ATmega2560). This library is intended for the **Arduino IDE** and also works great with **Arduino CLI**.
 
@@ -33,7 +33,7 @@ While Bluepad32 supports many controllers, this library focuses on **Xbox** cont
 
 ## Quick start (receiver)
 ```cpp
-#include <XBoxControllerHandler.h>
+#include <GamepadSerialBridge.h>
 
 void onButtonAChanged(uint8_t idx, bool down) {
   Serial.print("Controller "); Serial.print(idx);
@@ -106,7 +106,7 @@ If you change the sender format (names/order/ranges), update the receiver’s pa
 ---
 
 ## Debugging raw frames
-For troubleshooting, you can print the raw frame string the receiver sees. In `XBoxControllerHandler::ProcessSerial` you can enable the existing debug prints, e.g.:
+For troubleshooting, you can print the raw frame string the receiver sees. In `GamepadSerialBridge::ProcessSerial` you can enable the existing debug prints, e.g.:
 
 ```cpp
 // Example snippet inside ProcessSerial:

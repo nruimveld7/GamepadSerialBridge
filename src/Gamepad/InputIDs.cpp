@@ -1,8 +1,8 @@
-#include "GamepadInputIDs.h"
+#include "InputIDs.h"
 
-namespace Gamepad {
-  // Provide out-of-class definitions for the constexpr arrays
+namespace GSB {
+  // Provide out-of-class definitions for any constexpr arrays
   constexpr ButtonID DPadButtons::buttonIDs[];
   constexpr ButtonID MainButtons::buttonIDs[];
   constexpr ButtonID MiscButtons::buttonIDs[];
-}
+} // namespace GSB
