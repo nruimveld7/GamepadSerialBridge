@@ -1,4 +1,4 @@
-#include "LinkBase.h"
+#include "internal/LinkBase.h"
 
 namespace GSB {
   namespace internal {

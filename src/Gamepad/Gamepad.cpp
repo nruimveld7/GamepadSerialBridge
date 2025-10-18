@@ -2,23 +2,6 @@
 
 namespace GSB {
   // ---------- ctor / callback setters ----------
-  Gamepad::Gamepad()
-    : m_buttonOnPress(nullptr),
-      m_buttonOnRelease(nullptr),
-      m_triggerOnChange(nullptr),
-      m_joystickOnChange(nullptr),
-      m_batteryOnChange(nullptr),
-      m_sensorOnChange(nullptr),
-      m_rumbleOnChange(nullptr),
-      m_playerLedOnChange(nullptr),
-      m_colorLedOnChange(nullptr),
-      m_onDisconnect(nullptr),
-      m_index(0) {
-    for (uint8_t i = 0; i < PlayerLedCount(); ++i) {
-      m_playerLeds[i].SetID(static_cast<PlayerLedID>(i));
-    }
-  }
-
   Gamepad::Gamepad(uint8_t index)
     : m_buttonOnPress(nullptr),
       m_buttonOnRelease(nullptr),
@@ -31,9 +14,22 @@ namespace GSB {
       m_colorLedOnChange(nullptr),
       m_onDisconnect(nullptr),
       m_index(index) {
+    m_status.gamepadIndex = m_index;
     for (uint8_t i = 0; i < PlayerLedCount(); ++i) {
       m_playerLeds[i].SetID(static_cast<PlayerLedID>(i));
     }
+  }
+
+  const internal::Status& Gamepad::GetStatus() const noexcept {
+    return m_status;
+  }
+
+  internal::Status& Gamepad::GetStatus() noexcept {
+    return m_status;
+  }
+
+  uint8_t Gamepad::GetIndex() const noexcept {
+    return m_index;
   }
 
   // Inputs
@@ -49,7 +45,7 @@ namespace GSB {
     m_triggerOnChange = fxPtr;
   }
 
-  void Gamepad::SetJoystickOnChange(void (*fxPtr)(uint8_t gamepadIndex, JoystickID joystickID, int16_t xValue, int16_t yValue)) {
+  void Gamepad::SetJoystickOnChange(void (*fxPtr)(uint8_t gamepadIndex, JoystickID joystickID, int16_t valueX, int16_t valueY)) {
     m_joystickOnChange = fxPtr;
   }
 
@@ -57,7 +53,7 @@ namespace GSB {
     m_batteryOnChange = fxPtr;
   }
 
-  void Gamepad::SetSensorOnChange(void (*fxPtr)(uint8_t gamepadIndex, SensorID sensorID, int16_t xValue, int16_t yValue, int16_t zValue)) {
+  void Gamepad::SetSensorOnChange(void (*fxPtr)(uint8_t gamepadIndex, SensorID sensorID, int16_t valueX, int16_t valueY, int16_t valueZ)) {
     m_sensorOnChange = fxPtr;
   }
 
@@ -68,6 +64,7 @@ namespace GSB {
     }
     Button& button = GetButton(buttonID);
     if (button.SetPressed(pressed)) {
+      m_status.Update(buttonID, pressed);
       if (pressed) {
         if (m_buttonOnPress) {
           m_buttonOnPress(m_index, buttonID);
@@ -86,18 +83,20 @@ namespace GSB {
     }
     Trigger& trigger = GetTrigger(triggerID);
     if (trigger.SetValue(value)) {
+      m_status.Update(triggerID, value);
       if (m_triggerOnChange) {
         m_triggerOnChange(m_index, triggerID, trigger.GetValue());
       }
     }
   }
 
-  void Gamepad::SetJoystick(JoystickID joystickID, int16_t xValue, int16_t yValue) {
+  void Gamepad::SetJoystick(JoystickID joystickID, int16_t valueX, int16_t valueY) {
     if (!IsValid(joystickID)) {
       return;
     }
     Joystick& joystick = GetJoystick(joystickID);
-    if (joystick.SetValueX(xValue) || joystick.SetValueY(yValue)) {
+    if (joystick.SetValueX(valueX) || joystick.SetValueY(valueY)) {
+      m_status.Update(joystickID, valueX, valueY);
       if (m_joystickOnChange) {
         m_joystickOnChange(m_index, joystickID, joystick.GetValueX(), joystick.GetValueY());
       }
@@ -110,6 +109,7 @@ namespace GSB {
     }
     Joystick& joystick = GetJoystick(joystickID);
     if (joystick.SetValueX(value)) {
+      m_status.Update(joystickID, value, joystick.GetValueY());
       if (m_joystickOnChange) {
         m_joystickOnChange(m_index, joystickID, joystick.GetValueX(), joystick.GetValueY());
       }
@@ -122,6 +122,7 @@ namespace GSB {
     }
     Joystick& joystick = GetJoystick(joystickID);
     if (joystick.SetValueY(value)) {
+      m_status.Update(joystickID, joystick.GetValueX(), value);
       if (m_joystickOnChange) {
         m_joystickOnChange(m_index, joystickID, joystick.GetValueX(), joystick.GetValueY());
       }
@@ -134,18 +135,20 @@ namespace GSB {
     }
     Battery& battery = GetBattery(batteryID);
     if (battery.SetValue(value)) {
+      m_status.Update(batteryID, value);
       if (m_batteryOnChange) {
         m_batteryOnChange(m_index, batteryID, battery.GetValue());
       }
     }
   }
 
-  void Gamepad::SetSensor(SensorID sensorID, int16_t xValue, int16_t yValue, int16_t zValue) {
+  void Gamepad::SetSensor(SensorID sensorID, int16_t valueX, int16_t valueY, int16_t valueZ) {
     if (!IsValid(sensorID)) {
       return;
     }
     Sensor& sensor = GetSensor(sensorID);
-    if (sensor.SetValueX(xValue) || sensor.SetValueY(yValue) || sensor.SetValueZ(zValue)) {
+    if (sensor.SetValueX(valueX) || sensor.SetValueY(valueY) || sensor.SetValueZ(valueZ)) {
+      m_status.Update(sensorID, valueX, valueY, valueZ);
       if (m_sensorOnChange) {
         m_sensorOnChange(m_index, sensorID, sensor.GetValueX(), sensor.GetValueY(), sensor.GetValueZ());
       }
@@ -158,6 +161,7 @@ namespace GSB {
     }
     Sensor& sensor = GetSensor(sensorID);
     if (sensor.SetValueX(value)) {
+      m_status.Update(sensorID, value, sensor.GetValueY(), sensor.GetValueZ());
       if (m_sensorOnChange) {
         m_sensorOnChange(m_index, sensorID, sensor.GetValueX(), sensor.GetValueY(), sensor.GetValueZ());
       }
@@ -170,6 +174,7 @@ namespace GSB {
     }
     Sensor& sensor = GetSensor(sensorID);
     if (sensor.SetValueY(value)) {
+      m_status.Update(sensorID, sensor.GetValueX(), value, sensor.GetValueZ());
       if (m_sensorOnChange) {
         m_sensorOnChange(m_index, sensorID, sensor.GetValueX(), sensor.GetValueY(), sensor.GetValueZ());
       }
@@ -182,6 +187,7 @@ namespace GSB {
     }
     Sensor& sensor = GetSensor(sensorID);
     if (sensor.SetValueZ(value)) {
+      m_status.Update(sensorID, sensor.GetValueX(), sensor.GetValueY(), value);
       if (m_sensorOnChange) {
         m_sensorOnChange(m_index, sensorID, sensor.GetValueX(), sensor.GetValueY(), sensor.GetValueZ());
       }
@@ -197,12 +203,12 @@ namespace GSB {
     trigger.SetTolerance(tolerance);
   }
 
-  void Gamepad::SetJoystickTolerance(JoystickID joystickID, uint16_t xTolerance, uint16_t yTolerance) {
+  void Gamepad::SetJoystickTolerance(JoystickID joystickID, uint16_t toleranceX, uint16_t toleranceY) {
     if (!IsValid(joystickID)) {
       return;
     }
-    SetJoystickToleranceX(joystickID, xTolerance);
-    SetJoystickToleranceY(joystickID, yTolerance);
+    SetJoystickToleranceX(joystickID, toleranceX);
+    SetJoystickToleranceY(joystickID, toleranceY);
   }
 
   void Gamepad::SetJoystickToleranceX(JoystickID joystickID, uint16_t tolerance) {
@@ -229,13 +235,13 @@ namespace GSB {
     battery.SetTolerance(tolerance);
   }
 
-  void Gamepad::SetSensorTolerance(SensorID sensorID, uint16_t xTolerance, uint16_t yTolerance, uint16_t zTolerance) {
+  void Gamepad::SetSensorTolerance(SensorID sensorID, uint16_t toleranceX, uint16_t toleranceY, uint16_t toleranceZ) {
     if (!IsValid(sensorID)) {
       return;
     }
-    SetSensorToleranceX(sensorID, xTolerance);
-    SetSensorToleranceY(sensorID, yTolerance);
-    SetSensorToleranceZ(sensorID, zTolerance);
+    SetSensorToleranceX(sensorID, toleranceX);
+    SetSensorToleranceY(sensorID, toleranceY);
+    SetSensorToleranceZ(sensorID, toleranceZ);
   }
 
   void Gamepad::SetSensorToleranceX(SensorID sensorID, uint16_t tolerance) {
@@ -327,7 +333,9 @@ namespace GSB {
       return;
     }
     ColorLed& colorLed = GetColorLed(colorLedID);
-    if (colorLed.SetColor(red, green, blue) || colorLed.Set(illuminated)) {
+    bool changed = colorLed.SetColor(red, green, blue);
+    changed |= colorLed.Set(illuminated);
+    if (changed) {
       if (m_colorLedOnChange) {
         Color color = colorLed.GetColor();
         m_colorLedOnChange(m_index, colorLedID, colorLed.GetIlluminated(), color.red, color.green, color.blue);
@@ -340,7 +348,9 @@ namespace GSB {
       return;
     }
     ColorLed& colorLed = GetColorLed(colorLedID);
-    if (colorLed.SetColor(color) || colorLed.Set(illuminated)) {
+    bool changed = colorLed.SetColor(color);
+    changed |= colorLed.Set(illuminated);
+    if (changed) {
       if (m_colorLedOnChange) {
         color = colorLed.GetColor();
         m_colorLedOnChange(m_index, colorLedID, colorLed.GetIlluminated(), color.red, color.green, color.blue);

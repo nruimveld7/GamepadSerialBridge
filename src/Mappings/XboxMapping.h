@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Gamepad/InputIDs.h"
+#include "Gamepad/OutputIDs.h"
 
 namespace GSB {
   namespace Xbox {

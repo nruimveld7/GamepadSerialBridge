@@ -5,16 +5,16 @@
 #include "UartConfig.h"
 #include "Gamepad/InputIDs.h"
 #include "Gamepad/Gamepad.h"
-#include "Status.h"
-#include "Command.h"
-#include "Utilities.h"
+#include "internal/Status.h"
+#include "internal/Command.h"
+#include "internal/Utilities.h"
 
 namespace GSB {
   namespace internal {
     class LinkBase {
       public:
         explicit LinkBase(const LinkConfig& linkConfig) noexcept;
-        virtual ~LinkBase() = default;
+        virtual ~LinkBase() noexcept = default;
         LinkBase(const LinkBase&) = delete;
         LinkBase& operator=(const LinkBase&) = delete;
         bool Setup() noexcept;

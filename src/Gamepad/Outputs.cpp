@@ -1,4 +1,4 @@
-#include "Outputs.h"
+#include "Gamepad/Outputs.h"
 
 namespace GSB {
   // ----- Rumble -----

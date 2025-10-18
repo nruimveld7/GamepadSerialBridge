@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "OutputIDs.h"
+#include "Gamepad/OutputIDs.h"
 
 namespace GSB {
     class Rumble {

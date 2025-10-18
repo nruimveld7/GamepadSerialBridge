@@ -1,3 +1,3 @@
 #pragma once
 
-#include "XboxMapping.h"
+#include "Mappings/XboxMapping.h"

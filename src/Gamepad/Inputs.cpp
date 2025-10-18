@@ -1,4 +1,4 @@
-#include "Inputs.h"
+#include "Gamepad/Inputs.h"
 
 namespace GSB {
   // ----- Button -----

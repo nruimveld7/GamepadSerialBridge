@@ -5,16 +5,18 @@ namespace GSB {
 
   }
 
-  // ------------------- callback pass-throughs -------------------
+  // ──────────────────────────────
+  // Callbacks (applied to all gamepads)
+  // ──────────────────────────────
   void ApplicationLink::SetButtonOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) noexcept {
     for(uint8_t i = 0; i < GetGamepadCount(); ++i) {
-      GetGamepad(i).SetBtnOnPress(fxPtr);
+      GetGamepad(i).SetButtonOnPress(fxPtr);
     }
   }
 
   void ApplicationLink::SetButtonOnRelease(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) noexcept {
     for(uint8_t i = 0; i < GetGamepadCount(); ++i) {
-      GetGamepad(i).SetBtnOnRelease(fxPtr);
+      GetGamepad(i).SetButtonOnRelease(fxPtr);
     }
   }
 
@@ -158,55 +160,55 @@ namespace GSB {
   // All inputs on one gamepad
   void ApplicationLink::SetTriggerTolerance(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t triggerID = 0; triggerID < TriggerCount(); ++triggerID) {
-      SetTriggerTolerance(gamepadIndex, triggerID, tolerance);
+      SetTriggerTolerance(gamepadIndex, static_cast<TriggerID>(triggerID), tolerance);
     }
   }
 
   void ApplicationLink::SetJoystickTolerance(uint8_t gamepadIndex, uint16_t toleranceX, uint16_t toleranceY) noexcept {
     for(uint8_t joystickID = 0; joystickID < JoystickCount(); ++joystickID) {
-      SetJoystickTolerance(gamepadIndex, joystickID, toleranceX, toleranceY);
+      SetJoystickTolerance(gamepadIndex, static_cast<JoystickID>(joystickID), toleranceX, toleranceY);
     }
   }
 
   void ApplicationLink::SetJoystickToleranceX(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t joystickID = 0; joystickID < JoystickCount(); ++joystickID) {
-      SetJoystickToleranceX(gamepadIndex, joystickID, tolerance);
+      SetJoystickToleranceX(gamepadIndex, static_cast<JoystickID>(joystickID), tolerance);
     }
   }
 
   void ApplicationLink::SetJoystickToleranceY(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t joystickID = 0; joystickID < JoystickCount(); ++joystickID) {
-      SetJoystickToleranceY(gamepadIndex, joystickID, tolerance);
+      SetJoystickToleranceY(gamepadIndex, static_cast<JoystickID>(joystickID), tolerance);
     }
   }
 
   void ApplicationLink::SetBatteryTolerance(uint8_t gamepadIndex, uint8_t tolerance) noexcept {
     for(uint8_t batteryID = 0; batteryID < BatteryCount(); ++batteryID) {
-      SetBatteryTolerance(gamepadIndex, batteryID, tolerance);
+      SetBatteryTolerance(gamepadIndex, static_cast<BatteryID>(batteryID), tolerance);
     }
   }
 
   void ApplicationLink::SetSensorTolerance(uint8_t gamepadIndex, uint16_t toleranceX, uint16_t toleranceY, uint16_t toleranceZ) noexcept {
     for(uint8_t sensorID = 0; sensorID < SensorCount(); ++sensorID) {
-      SetSensorTolerance(gamepadIndex, sensorID, toleranceX, toleranceY, toleranceZ);
+      SetSensorTolerance(gamepadIndex, static_cast<SensorID>(sensorID), toleranceX, toleranceY, toleranceZ);
     }
   }
 
   void ApplicationLink::SetSensorToleranceX(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t sensorID = 0; sensorID < SensorCount(); ++sensorID) {
-      SetSensorToleranceX(gamepadIndex, sensorID, tolerance);
+      SetSensorToleranceX(gamepadIndex, static_cast<SensorID>(sensorID), tolerance);
     }
   }
 
   void ApplicationLink::SetSensorToleranceY(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t sensorID = 0; sensorID < SensorCount(); ++sensorID) {
-      SetSensorToleranceY(gamepadIndex, sensorID, tolerance);
+      SetSensorToleranceY(gamepadIndex, static_cast<SensorID>(sensorID), tolerance);
     }
   }
 
   void ApplicationLink::SetSensorToleranceZ(uint8_t gamepadIndex, uint16_t tolerance) noexcept {
     for(uint8_t sensorID = 0; sensorID < SensorCount(); ++sensorID) {
-      SetSensorToleranceZ(gamepadIndex, sensorID, tolerance);
+      SetSensorToleranceZ(gamepadIndex, static_cast<SensorID>(sensorID), tolerance);
     }
   }
 
@@ -576,32 +578,19 @@ namespace GSB {
 
   // ------------------- serial ingest -------------------
   void ApplicationLink::ParseSerial(const uint8_t* data, size_t length) noexcept {
-    if (data == nullptr || length != sizeof(internal::Status)) {
-      Log(F("Invalid Binary Payload Length"));
+    if (data == nullptr) {
+      Log(F("Invalid Binary Payload"));
       return;
     }
     internal::Status status{};
-    status.gamepadIndex = UInt8AtOffset(data, 0);
+    if(!internal::Status::Deserialize(data, length, status)) {
+      Log(F("Invalid Binary Payload Length"));
+      return;
+    }
     if (status.gamepadIndex >= GetGamepadCount()) {
       Log(F("Invalid Binary Payload - Invalid Gamepad Index"));
       return;
     }
-    status.dpadMask = UInt8AtOffset(data, 1);
-    status.mainButtonsMask  = UInt16AtOffset(data, 2);
-    status.joystick1X = Int16AtOffset(data, 4);
-    status.joystick1Y = Int16AtOffset(data, 6);
-    status.joystick2X = Int16AtOffset(data, 8);
-    status.joystick2Y = Int16AtOffset(data, 10);
-    status.trigger1 = Int16AtOffset(data, 12);
-    status.trigger2 = Int16AtOffset(data, 14);
-    status.miscButtonsMask = UInt8AtOffset(data, 16);
-    status.battery = UInt8AtOffset(data, 17);
-    status.sensor1X = Int16AtOffset(data, 18);
-    status.sensor1Y = Int16AtOffset(data, 20);
-    status.sensor1Z = Int16AtOffset(data, 22);
-    status.sensor2X = Int16AtOffset(data, 24);
-    status.sensor2Y = Int16AtOffset(data, 26);
-    status.sensor2Z = Int16AtOffset(data, 28);
     ApplyStatus(status);
   }
 
@@ -617,7 +606,7 @@ namespace GSB {
     HandleTrigger(gamepad, TriggerID::TRIGGER_1, status.trigger1);
     HandleTrigger(gamepad, TriggerID::TRIGGER_2, status.trigger2);
     HandleMiscButtons(gamepad, status.miscButtonsMask);
-    HandleBattery(gamepad, BatteryID::BATTERY_1, status.battery);
+    HandleBattery(gamepad, BatteryID::BATTERY_1, status.battery1);
     HandleSensor(gamepad, SensorID::SENSOR_1, status.sensor1X, status.sensor1Y, status.sensor1Z);
     HandleSensor(gamepad, SensorID::SENSOR_2, status.sensor2X, status.sensor2Y, status.sensor2Z);
   }
