@@ -117,6 +117,10 @@ namespace GSB {
       // Process status messages
       void ParseSerial(const uint8_t* data, size_t length) noexcept override;
       void ApplyStatus(const internal::Status& status);
+      
+      // ──────────────────────────────
+      // STATUS
+      // ──────────────────────────────
       void HandleDPad(Gamepad& gamepad, uint8_t bitfield);
       void HandleMainButtons(Gamepad& gamepad, uint16_t bitfield);
       void HandleJoystick(Gamepad& gamepad, JoystickID joystickID, int16_t valueX, int16_t valueY);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "Utilities.h"
+#include "internal/Utilities.h"
 
 namespace GSB {
   namespace internal {
@@ -242,6 +242,10 @@ namespace GSB {
 
       Output GetOutput() const noexcept {
         return m_output;
+      }
+
+      Parameters GetParameters() const noexcept {
+        return m_parameters;
       }
 
       size_t Serialize(uint8_t* data, size_t maxLength) const noexcept {

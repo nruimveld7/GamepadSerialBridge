@@ -54,63 +54,63 @@ namespace GSB {
     };
 
     // Small helpers for sizing/indices
-    constexpr uint8_t ButtonCount() {
+    constexpr uint8_t ButtonCount() noexcept {
         return static_cast<uint8_t>(ButtonID::COUNT);
     }
 
-    constexpr uint8_t ButtonIndex(ButtonID id) {
+    constexpr uint8_t ButtonIndex(ButtonID id) noexcept {
         return (static_cast<uint8_t>(id) < ButtonCount()) ? static_cast<uint8_t>(id) : ButtonCount();
     }
 
-    inline bool IsValid(ButtonID id) {
+    constexpr bool IsValid(ButtonID id) noexcept {
         return id < ButtonID::COUNT;
     }
 
-    constexpr uint8_t TriggerCount() {
+    constexpr uint8_t TriggerCount() noexcept {
         return static_cast<uint8_t>(TriggerID::COUNT);
     }
 
-    constexpr uint8_t TriggerIndex(TriggerID id) {
+    constexpr uint8_t TriggerIndex(TriggerID id) noexcept {
         return (static_cast<uint8_t>(id) < TriggerCount()) ? static_cast<uint8_t>(id) : TriggerCount();
     }
 
-    inline bool IsValid(TriggerID id) {
+    constexpr bool IsValid(TriggerID id) noexcept {
         return id < TriggerID::COUNT;
     }
 
-    constexpr uint8_t JoystickCount() {
+    constexpr uint8_t JoystickCount() noexcept {
         return static_cast<uint8_t>(JoystickID::COUNT);
     }
 
-    constexpr uint8_t JoystickIndex(JoystickID id) {
+    constexpr uint8_t JoystickIndex(JoystickID id) noexcept {
         return (static_cast<uint8_t>(id) < JoystickCount()) ? static_cast<uint8_t>(id) : JoystickCount();
     }
 
-    inline bool IsValid(JoystickID id) {
+    constexpr bool IsValid(JoystickID id) noexcept {
         return id < JoystickID::COUNT;
     }
 
-    constexpr uint8_t BatteryCount() {
+    constexpr uint8_t BatteryCount() noexcept {
         return static_cast<uint8_t>(BatteryID::COUNT);
     }
 
-    constexpr uint8_t BatteryIndex(BatteryID id) {
+    constexpr uint8_t BatteryIndex(BatteryID id) noexcept {
         return (static_cast<uint8_t>(id) < BatteryCount()) ? static_cast<uint8_t>(id) : BatteryCount();
     }
 
-    inline bool IsValid(BatteryID id) {
+    constexpr bool IsValid(BatteryID id) noexcept {
         return id < BatteryID::COUNT;
     }
 
-    constexpr uint8_t SensorCount() {
+    constexpr uint8_t SensorCount() noexcept {
         return static_cast<uint8_t>(SensorID::COUNT);
     }
 
-    constexpr uint8_t SensorIndex(SensorID id) {
+    constexpr uint8_t SensorIndex(SensorID id) noexcept {
         return (static_cast<uint8_t>(id) < SensorCount()) ? static_cast<uint8_t>(id) : SensorCount();
     }
 
-    inline bool IsValid(SensorID id) {
+    constexpr bool IsValid(SensorID id) noexcept {
         return id < SensorID::COUNT;
     }
 
@@ -122,8 +122,19 @@ namespace GSB {
             ButtonID::DPAD_4,
         };
         
-        static constexpr uint8_t Count() {
-            return sizeof(buttonIDs) / sizeof(buttonIDs[0]);
+        static constexpr uint8_t Count() noexcept {
+            return static_cast<uint8_t>(sizeof(buttonIDs) / sizeof(buttonIDs[0]));
+        }
+
+        static bool FindButton(ButtonID buttonID, uint8_t& index) noexcept {
+            const uint8_t count = Count();
+            for (uint8_t i = 0; i < count; ++i) {
+                if (buttonIDs[i] == buttonID) {
+                    index = i;
+                    return true;
+                }
+            }
+            return false;
         }
     };
 
@@ -147,8 +158,19 @@ namespace GSB {
             ButtonID::MAIN_16,
         };
 
-        static constexpr uint8_t Count() {
-            return sizeof(buttonIDs) / sizeof(buttonIDs[0]);
+        static constexpr uint8_t Count() noexcept {
+            return static_cast<uint8_t>(sizeof(buttonIDs) / sizeof(buttonIDs[0]));
+        }
+
+        static bool FindButton(ButtonID buttonID, uint8_t& index) noexcept {
+            const uint8_t count = Count();
+            for (uint8_t i = 0; i < count; ++i) {
+                if (buttonIDs[i] == buttonID) {
+                    index = i;
+                    return true;
+                }
+            }
+            return false;
         }
     };
 
@@ -160,8 +182,19 @@ namespace GSB {
             ButtonID::MISC_4,
         };
 
-        static constexpr uint8_t Count() {
-            return sizeof(buttonIDs) / sizeof(buttonIDs[0]);
+        static constexpr uint8_t Count() noexcept {
+            return static_cast<uint8_t>(sizeof(buttonIDs) / sizeof(buttonIDs[0]));
+        }
+
+        static bool FindButton(ButtonID buttonID, uint8_t& index) noexcept {
+            const uint8_t count = Count();
+            for (uint8_t i = 0; i < count; ++i) {
+                if (buttonIDs[i] == buttonID) {
+                    index = i;
+                    return true;
+                }
+            }
+            return false;
         }
     };
 } // namespace GSB

@@ -5,7 +5,9 @@ namespace GSB {
 
   }
 
-  // ------------------- callback pass-throughs -------------------
+  // ──────────────────────────────
+  // Callbacks (applied to all gamepads)
+  // ──────────────────────────────
   void ApplicationLink::SetButtonOnPress(void (*fxPtr)(uint8_t gamepadIndex, ButtonID buttonID)) noexcept {
     for(uint8_t i = 0; i < GetGamepadCount(); ++i) {
       GetGamepad(i).SetBtnOnPress(fxPtr);
@@ -576,32 +578,19 @@ namespace GSB {
 
   // ------------------- serial ingest -------------------
   void ApplicationLink::ParseSerial(const uint8_t* data, size_t length) noexcept {
-    if (data == nullptr || length != sizeof(internal::Status)) {
-      Log(F("Invalid Binary Payload Length"));
+    if (data == nullptr) {
+      Log(F("Invalid Binary Payload"));
       return;
     }
     internal::Status status{};
-    status.gamepadIndex = UInt8AtOffset(data, 0);
+    if(!internal::Status::Deserialize(data, length, status)) {
+      Log(F("Invalid Binary Payload Length"));
+      return;
+    }
     if (status.gamepadIndex >= GetGamepadCount()) {
       Log(F("Invalid Binary Payload - Invalid Gamepad Index"));
       return;
     }
-    status.dpadMask = UInt8AtOffset(data, 1);
-    status.mainButtonsMask  = UInt16AtOffset(data, 2);
-    status.joystick1X = Int16AtOffset(data, 4);
-    status.joystick1Y = Int16AtOffset(data, 6);
-    status.joystick2X = Int16AtOffset(data, 8);
-    status.joystick2Y = Int16AtOffset(data, 10);
-    status.trigger1 = Int16AtOffset(data, 12);
-    status.trigger2 = Int16AtOffset(data, 14);
-    status.miscButtonsMask = UInt8AtOffset(data, 16);
-    status.battery = UInt8AtOffset(data, 17);
-    status.sensor1X = Int16AtOffset(data, 18);
-    status.sensor1Y = Int16AtOffset(data, 20);
-    status.sensor1Z = Int16AtOffset(data, 22);
-    status.sensor2X = Int16AtOffset(data, 24);
-    status.sensor2Y = Int16AtOffset(data, 26);
-    status.sensor2Z = Int16AtOffset(data, 28);
     ApplyStatus(status);
   }
 

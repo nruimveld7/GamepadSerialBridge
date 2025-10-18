@@ -17,5 +17,9 @@ namespace GSB {
             buffer[0] = static_cast<uint8_t>(value & 0xFF);
             buffer[1] = static_cast<uint8_t>((value >> 8) & 0xFF);
         }
+
+        constexpr inline bool Uint8ToBool(uint8_t value) noexcept {
+            return (value & 0x01u) != 0;
+        }
     } // namespace internal
 } // namespace GSB
