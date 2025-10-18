@@ -109,7 +109,7 @@ namespace GSB {
     const internal::Command::OpCode& opCode = command.GetOpCode();
     const internal::Command::Output& output = command.GetOutput();
     const bool outputAll = output.IsAll();
-    const internal::Command::Parameters& parameters = command.GetParameters();
+    const internal::Command::AppliedParameters& parameters = command.GetParameters();
     
     switch(opCode) {
       case internal::Command::OpCode::Disconnect: {
@@ -122,8 +122,8 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::RumbleStart: {
-        const uint8_t force = parameters.Rumble.force;
-        const uint8_t duration = parameters.Rumble.duration;
+        const uint8_t force = parameters.rumble.force;
+        const uint8_t duration = parameters.rumble.duration;
         if (outputAll) {
           if (targetAll) {
             StartRumbleForAllGamepads(force, duration);
@@ -160,7 +160,7 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::PlayerLedSet: {
-        const bool illuminated = internal::Uint8ToBool(parameters.LedSet.illuminated);
+        const bool illuminated = internal::Uint8ToBool(parameters.ledSet.illuminated);
         if (outputAll) {
           if (targetAll) {
             SetPlayerLedsForAllGamepads(illuminated);
@@ -197,7 +197,7 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::PlayerLedsSetMask: {
-        const uint8_t mask = parameters.LedsMask.mask;
+        const uint8_t mask = parameters.ledsMask.mask;
         if (targetAll) {
           SetPlayerLedsForAllGamepads(mask);
         } else {
@@ -207,7 +207,7 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::PlayerLedsToggleMask: {
-        const uint8_t mask = parameters.LedsMask.mask;
+        const uint8_t mask = parameters.ledsMask.mask;
         if (targetAll) {
           TogglePlayerLedsForAllGamepads(mask);
         } else {
@@ -217,7 +217,7 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::ColorLedSet: {
-        const bool illuminated = internal::Uint8ToBool(parameters.LedSet.illuminated);
+        const bool illuminated = internal::Uint8ToBool(parameters.ledSet.illuminated);
         if (outputAll) {
           if (targetAll) {
             SetColorLedsForAllGamepads(illuminated);
@@ -236,10 +236,10 @@ namespace GSB {
       }
 
       case internal::Command::OpCode::ColorLedSetColor: {
-        const bool illuminated = internal::Uint8ToBool(parameters.LedSetColor.illuminated);
-        const uint8_t red   = parameters.LedSetColor.red;
-        const uint8_t green = parameters.LedSetColor.green;
-        const uint8_t blue  = parameters.LedSetColor.blue;
+        const bool illuminated = internal::Uint8ToBool(parameters.ledSetColor.illuminated);
+        const uint8_t red   = parameters.ledSetColor.red;
+        const uint8_t green = parameters.ledSetColor.green;
+        const uint8_t blue  = parameters.ledSetColor.blue;
         if (outputAll) {
           if (targetAll) {
             SetColorLedsForAllGamepads(illuminated, red, green, blue);

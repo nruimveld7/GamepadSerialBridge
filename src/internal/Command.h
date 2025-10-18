@@ -244,7 +244,7 @@ namespace GSB {
         return m_output;
       }
 
-      Parameters GetParameters() const noexcept {
+      const AppliedParameters& GetParameters() const noexcept {
         return m_parameters;
       }
 

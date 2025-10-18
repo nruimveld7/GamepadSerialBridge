@@ -7,7 +7,7 @@
 namespace GSB {
   class GamepadLink : public internal::LinkBase {
     public:
-      GamepadLink(LinkConfig linkConfig);
+      GamepadLink(const LinkConfig& linkConfig);
       ~GamepadLink() noexcept = default;
 
       // ──────────────────────────────
